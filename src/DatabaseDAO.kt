@@ -97,16 +97,14 @@ class ScholarshipDao(id: EntityID<Int>) : IntEntity(id) {
     var bondYears by Scholarships.bondYears
 }
 object Diplomas: IntIdTable(){
-    val name = varchar("name", 255)
-    val duration = integer("duration_years")
+    val courseInfo = reference("course_info_ref", CourseInfos)
     val fees = float("fees")
     val outline = text("outline")
 }
 class DiplomaDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<DiplomaDao>(Diplomas)
 
-    var name by Diplomas.name
-    var duration by Diplomas.duration
+    var courseInfo by CourseInfoDao referencedOn Diplomas.courseInfo
     var fees by Diplomas.fees
     var outline by Diplomas.outline
 }
