@@ -11,7 +11,7 @@ fun getUnixTime(): Long{
 }
 
 object Persons: IntIdTable(){
-    val uuid = uuid("uuid").autoGenerate()
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val firstName = varchar("first_name", 255)
     val middleName = varchar("middle_name", 255).nullable()
     val lastName = varchar("last_name", 255)
@@ -45,7 +45,7 @@ class PersonDao(id: EntityID<Int>) : IntEntity(id) {
     val participants by ParticipantDao referrersOn Participants.userInfo
 }
 object Courses: IntIdTable(){
-    val uuid = uuid("uuid").autoGenerate()
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val learningOutcomes = text("learning_outcome")
     val whoShouldAttend = text("who_should_attend")
     val prerequisites = text("prerequisites")
@@ -83,18 +83,22 @@ class FellowShipDao(id: EntityID<Int>) : IntEntity(id) {
     var courseInfo by CourseInfoDao referencedOn FellowShips.courseInfo
 }
 object Scholarships: IntIdTable(){
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val title = varchar("title", 255)
     val eligibility = text("eligibility")
     val benefits = text("benefits")
     val bondYears = integer("bond_years")
+    val outline = text("outline")
 }
 class ScholarshipDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<ScholarshipDao>(Scholarships)
 
+    var uuid by Scholarships.uuid
     var title by Scholarships.title
     var eligibility by Scholarships.eligibility
     var benefits by Scholarships.benefits
     var bondYears by Scholarships.bondYears
+    var outline by Scholarships.outline
 }
 object Diplomas: IntIdTable(){
     val courseInfo = reference("course_info_ref", CourseInfos)
@@ -110,7 +114,7 @@ class DiplomaDao(id: EntityID<Int>) : IntEntity(id) {
 }
 
 object Employees: IntIdTable(){
-    val uuid = uuid("uuid").autoGenerate()
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val approvalStatus = integer("approval_status").clientDefault { 1 } // 0 rejected, 1 pending, 2 accepted
     val userType = integer("user_type") // 0 school head, 1 course manager 2, admin
     val userInfo = reference("user_reference", Persons)
@@ -125,7 +129,7 @@ class EmployeeDao(id: EntityID<Int>) : IntEntity(id) {
 }
 
 object Participants: IntIdTable(){
-    val uuid = uuid("uuid").autoGenerate()
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val organisation = varchar("organisation", 255)
     val jobTitle = varchar("job_title", 255)
     val userInfo = reference("user_ref", Persons)
@@ -140,7 +144,7 @@ class ParticipantDao(id: EntityID<Int>) : IntEntity(id) {
 }
 
 object Applications: IntIdTable(){
-    val uuid = uuid("uuid").autoGenerate()
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val progressType = integer("progress_type") // 0, rejected, 1 not approved, 2 in progress, 3 completed
     val participant = reference("participant_ref", Participants)
 }
