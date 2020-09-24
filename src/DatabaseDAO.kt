@@ -69,7 +69,7 @@ class CourseDao(id: EntityID<Int>) : IntEntity(id) {
     var courseInfo by CourseInfoDao referencedOn Courses.courseInfo
 }
 object FellowShips: IntIdTable(){
-    val uuid = uuid("uuid").autoGenerate()
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val outline = text("outline")
     val fellowShipCourse = reference("course_ref", Courses)
     val courseInfo = reference("course_info_ref", CourseInfos)
@@ -101,6 +101,7 @@ class ScholarshipDao(id: EntityID<Int>) : IntEntity(id) {
     var outline by Scholarships.outline
 }
 object Diplomas: IntIdTable(){
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val courseInfo = reference("course_info_ref", CourseInfos)
     val fees = float("fees")
     val outline = text("outline")
@@ -108,6 +109,7 @@ object Diplomas: IntIdTable(){
 class DiplomaDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<DiplomaDao>(Diplomas)
 
+    var uuid by Diplomas.uuid
     var courseInfo by CourseInfoDao referencedOn Diplomas.courseInfo
     var fees by Diplomas.fees
     var outline by Diplomas.outline
@@ -197,10 +199,10 @@ class DiplomaApplicationDao(id: EntityID<Int>) : IntEntity(id) {
     var application by ApplicationDao referencedOn DiplomaApplications.application
 }
 
-object CourseInfos: IntIdTable(){
-    val title= varchar("title", 255)
-    val startDate = long("start_date_timestamp")
-    val endDate = long("end_date_timestamp")
+object CourseInfos: IntIdTable() {
+    val title = varchar("title", 255)
+    val startDate = long("start_date_timestamp").nullable()
+    val endDate = long("end_date_timestamp").nullable()
     val applicationDeadline = long("application_deadline_timestamp")
 }
 class CourseInfoDao(id: EntityID<Int>) : IntEntity(id) {

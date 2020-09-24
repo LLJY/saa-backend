@@ -7,6 +7,7 @@ data class HelloWorld(val hello:String)
 
 @Serializable
 data class UserStaff(
+        var uuid: String = "",
         var firstName: String = "",
         var middleName: String? = null,
         var lastName: String = "",
@@ -34,8 +35,40 @@ data class CourseModel(
         var attending: String,
         var applicationDeadline: Long
 )
-fun newEmployeeDao(){
+
+@Serializable
+data class FellowshipModel(
+        var uuid: String,
+        var title: String,
+        var outline: String,
+        var course: CourseModel,
+        var applicationDeadline: Long
+)
+
+@Serializable
+data class ScholarshipModel(
+        var uuid: String,
+        var title: String,
+        var eligibility: String,
+        var benefits: String,
+        var bondTime: Int,
+        var outline: String
+)
+
+@Serializable
+data class DiplomaModel(
+        var uuid: String,
+        var title: String,
+        var fees: Float,
+        var outline: String,
+        var startDate: Long,
+        var endDate: Long,
+        var applicationDeadline: Long
+)
+
+fun newEmployeeDao() {
 
 }
+
 @Serializable
 data class LoginUserRoute(var email: String, var password: String)
