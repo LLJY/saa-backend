@@ -67,6 +67,7 @@ class CourseDao(id: EntityID<Int>) : IntEntity(id) {
     var covered by Courses.covered
     var fees by Courses.fees
     var courseInfo by CourseInfoDao referencedOn Courses.courseInfo
+    val applications by CourseApplicationDao referrersOn CourseApplications.course
 }
 object FellowShips: IntIdTable(){
     val uuid = uuid("uuid").autoGenerate().uniqueIndex()
@@ -81,6 +82,7 @@ class FellowShipDao(id: EntityID<Int>) : IntEntity(id) {
     var outline by FellowShips.outline
     var fellowShipCourse by CourseDao referencedOn FellowShips.fellowShipCourse
     var courseInfo by CourseInfoDao referencedOn FellowShips.courseInfo
+    val applications by FellowShipApplicationDao referrersOn FellowShipApplications.fellowShip
 }
 object Scholarships: IntIdTable(){
     val uuid = uuid("uuid").autoGenerate().uniqueIndex()
@@ -99,6 +101,7 @@ class ScholarshipDao(id: EntityID<Int>) : IntEntity(id) {
     var benefits by Scholarships.benefits
     var bondYears by Scholarships.bondYears
     var outline by Scholarships.outline
+    val applications by ScholarShipApplicationDao referrersOn ScholarShipApplications.scholarship
 }
 object Diplomas: IntIdTable(){
     val uuid = uuid("uuid").autoGenerate().uniqueIndex()
@@ -113,6 +116,7 @@ class DiplomaDao(id: EntityID<Int>) : IntEntity(id) {
     var courseInfo by CourseInfoDao referencedOn Diplomas.courseInfo
     var fees by Diplomas.fees
     var outline by Diplomas.outline
+    val applications by DiplomaApplicationDao referrersOn DiplomaApplications.diploma
 }
 
 object Employees: IntIdTable(){
@@ -158,43 +162,51 @@ class ApplicationDao(id: EntityID<Int>) : IntEntity(id) {
     var participant by ParticipantDao referencedOn Applications.participant
 }
 
-object CourseApplications: IntIdTable(){
-    val applicationInfo = reference("application_ref", Participants)
+object CourseApplications: IntIdTable() {
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
+    val applicationInfo = reference("application_ref", Applications)
     val course = reference("course_ref", Courses)
 }
 class CourseApplicationDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<CourseApplicationDao>(CourseApplications)
 
-    var applicationInfo by CourseApplications.applicationInfo
+    var uuid by Applications.uuid
+    var applicationInfo by ApplicationDao referencedOn CourseApplications.applicationInfo
     var course by CourseDao referencedOn CourseApplications.course
 }
 object FellowShipApplications: IntIdTable(){
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val fellowShip = reference("fellowship_ref", FellowShips)
     val application = reference("application_ref", Applications)
 }
 class FellowShipApplicationDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<FellowShipApplicationDao>(FellowShipApplications)
 
+    var uuid by FellowShipApplications.uuid
     var fellowship by FellowShipDao referencedOn FellowShipApplications.fellowShip
     var application by ApplicationDao referencedOn FellowShipApplications.application
 }
 object ScholarShipApplications: IntIdTable(){
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val scholarship = reference("scholarship_ref", Scholarships)
     val application = reference("application_ref", Applications)
 }
 class ScholarShipApplicationDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<ScholarShipApplicationDao>(ScholarShipApplications)
 
+    var uuid by ScholarShipApplications.uuid
     var scholarship by ScholarshipDao referencedOn ScholarShipApplications.scholarship
     var application by ApplicationDao referencedOn ScholarShipApplications.application
 }
 object DiplomaApplications: IntIdTable(){
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val diploma = reference("diploma_ref", Diplomas)
     val application = reference("application_ref", Applications)
 }
 class DiplomaApplicationDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<DiplomaApplicationDao>(DiplomaApplications)
 
+    var uuid by DiplomaApplications.uuid
     var diploma by DiplomaDao referencedOn DiplomaApplications.diploma
     var application by ApplicationDao referencedOn DiplomaApplications.application
 }

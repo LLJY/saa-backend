@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
+import kotlin.collections.ArrayList
 
 fun dbConnect(){
     val sqlSecret = """.5k]A9z4[k?VJszna%{]Zc89=LYVPKD"""
@@ -53,7 +54,57 @@ suspend fun createEmployeeFromUser(user: UserStaff) {
         }
     }
 }
-fun convertCourseDaoToCourseModel(courseDao: CourseDao): CourseModel{
+
+suspend fun updateEmployeeFromUser(user: UserStaff) {
+    withContext(Dispatchers.IO) {
+        // leave the hash blank if update did not provide a new password
+        val hash = if (!user.password.isBlank()) argonHash(user.password) else ""
+        newSuspendedTransaction(Dispatchers.IO) {
+            val employee = EmployeeDao.find { Employees.uuid eq UUID.fromString(user.uuid) }.first()
+            val person = employee.userInfo
+            person.firstName = user.firstName
+            person.middleName = user.middleName
+            person.lastName = user.lastName
+            person.email = user.email
+            person.dateOfBirth = user.dateOfBirth
+            // avoid making password hash blank
+            if (hash.isNotBlank()) {
+                person.passwordHash = hash
+            }
+            person.passportNumber = user.passportNumber
+            person.passportExpiry = user.passportExpiry
+            person.country = user.country
+            person.contactNumber = user.contactNumber.toString()
+            person.notificationToken = "0"
+        }
+    }
+}
+
+suspend fun getEmployeeInfo(uuid: String): UserStaff {
+    var returnStaff = UserStaff()
+    withContext(Dispatchers.IO) {
+        newSuspendedTransaction(Dispatchers.IO) {
+            val employee = EmployeeDao.find { Employees.uuid eq UUID.fromString(uuid) }.first()
+            returnStaff = UserStaff(
+                    employee.uuid.toString(),
+                    employee.userInfo.firstName,
+                    employee.userInfo.middleName,
+                    employee.userInfo.lastName,
+                    employee.userType,
+                    employee.userInfo.email,
+                    employee.userInfo.passportNumber,
+                    employee.userInfo.passportExpiry,
+                    employee.userInfo.dateOfBirth,
+                    employee.userInfo.country,
+                    "",
+                    employee.userInfo.contactNumber.toInt()
+            )
+        }
+    }
+    return returnStaff
+}
+
+fun convertCourseDaoToCourseModel(courseDao: CourseDao): CourseModel {
     // courses do not have nullable fields
     return CourseModel(
             courseDao.uuid.toString(),
@@ -323,6 +374,98 @@ suspend fun deleteScholarshipFromScholarshipModel(scholarshipModel: ScholarshipM
             scholarship.delete()
         }
     }
+}
+
+suspend fun getCourseApplicants(uuid: UUID): List<UserApplicationModel> {
+    val returnList = ArrayList<UserApplicationModel>()
+    withContext(Dispatchers.IO) {
+        newSuspendedTransaction(Dispatchers.IO) {
+            val course = CourseDao.find { Courses.uuid eq uuid }.first()
+            for (application in course.applications) {
+                val userInfo = application.applicationInfo.participant.userInfo
+                val fullName = if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                returnList.add(
+                        UserApplicationModel(
+                                fullName,
+                                application.applicationInfo.progressType,
+                                application.uuid.toString(),
+                                userInfo.uuid.toString(),
+                                0 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                        )
+                )
+            }
+        }
+    }
+    return returnList
+}
+
+suspend fun getFellowshipApplicants(uuid: UUID): List<UserApplicationModel> {
+    val returnList = ArrayList<UserApplicationModel>()
+    withContext(Dispatchers.IO) {
+        newSuspendedTransaction(Dispatchers.IO) {
+            val fellowship = FellowShipDao.find { FellowShips.uuid eq uuid }.first()
+            for (application in fellowship.applications) {
+                val userInfo = application.application.participant.userInfo
+                val fullName = if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                returnList.add(
+                        UserApplicationModel(
+                                fullName,
+                                application.application.progressType,
+                                application.uuid.toString(),
+                                userInfo.uuid.toString(),
+                                1 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                        )
+                )
+            }
+        }
+    }
+    return returnList
+}
+
+suspend fun getScholarshipApplicants(uuid: UUID): List<UserApplicationModel> {
+    val returnList = ArrayList<UserApplicationModel>()
+    withContext(Dispatchers.IO) {
+        newSuspendedTransaction(Dispatchers.IO) {
+            val scholarship = ScholarshipDao.find { Scholarships.uuid eq uuid }.first()
+            for (application in scholarship.applications) {
+                val userInfo = application.application.participant.userInfo
+                val fullName = if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                returnList.add(
+                        UserApplicationModel(
+                                fullName,
+                                application.application.progressType,
+                                application.uuid.toString(),
+                                userInfo.uuid.toString(),
+                                2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                        )
+                )
+            }
+        }
+    }
+    return returnList
+}
+
+suspend fun getDiplomaApplications(uuid: UUID): List<UserApplicationModel> {
+    val returnList = ArrayList<UserApplicationModel>()
+    withContext(Dispatchers.IO) {
+        newSuspendedTransaction(Dispatchers.IO) {
+            val diploma = DiplomaDao.find { Diplomas.uuid eq uuid }.first()
+            for (application in diploma.applications) {
+                val userInfo = application.application.participant.userInfo
+                val fullName = if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                returnList.add(
+                        UserApplicationModel(
+                                fullName,
+                                application.application.progressType,
+                                application.uuid.toString(),
+                                userInfo.uuid.toString(),
+                                2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                        )
+                )
+            }
+        }
+    }
+    return returnList
 }
 
 

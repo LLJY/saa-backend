@@ -37,12 +37,24 @@ data class CourseModel(
 )
 
 @Serializable
+data class CourseApplyModel(
+        var course: CourseModel,
+        var userUUID: String
+)
+
+@Serializable
 data class FellowshipModel(
         var uuid: String,
         var title: String,
         var outline: String,
         var course: CourseModel,
         var applicationDeadline: Long
+)
+
+@Serializable
+data class FellowshipApplyModel(
+        var fellowship: FellowshipModel,
+        var userUUID: String
 )
 
 @Serializable
@@ -56,6 +68,12 @@ data class ScholarshipModel(
 )
 
 @Serializable
+data class ScholarshipApplyModel(
+        var scholarship: ScholarshipModel,
+        var userUUID: String
+)
+
+@Serializable
 data class DiplomaModel(
         var uuid: String,
         var title: String,
@@ -66,9 +84,26 @@ data class DiplomaModel(
         var applicationDeadline: Long
 )
 
-fun newEmployeeDao() {
+@Serializable
+data class DiplomaApplyModel(
+        var diploma: DiplomaModel,
+        var userUUID: String
+)
 
-}
+@Serializable
+data class UserApplicationModel(
+        var fullName: String,
+        var progressType: Int, // 0, rejected, 1 not approved, 2 in progress, 3 completed
+        var applicationUUID: String,
+        var userUUID: String,
+        var courseApplicationIndex: Int // 0 = course, 1= fellowship, 2=scholarship, 3=diploma
+)
+
+@Serializable
+data class ParticipantModel(var uuid: String, var fullName: String, var dob: Long, var contactNumber: String, var country: String, var passportNumber: String, var passportExpiry: Long, var organisation: String, var jobTitle: String, var email: String)
+
+@Serializable
+data class EmployeeModel(var uuid: String, var fullName: String, var dob: Long, var contactNumber: String, var country: String, var passportNumber: String, var passportExpiry: Long, var email: String, var userType: String, var approvalStatus: Int)
 
 @Serializable
 data class LoginUserRoute(var email: String, var password: String)
