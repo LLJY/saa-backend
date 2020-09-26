@@ -278,10 +278,18 @@ fun Application.module() {
                     diploma = diplomaDao
                 }
             }
-
+        }
+        post("/update-application-progress") {
+            // this will be the application uuid
+            val userApplicationModel = call.receive<UserApplicationModel>()
+            newSuspendedTransaction(Dispatchers.IO) {
+                val application = ApplicationDao.find { Applications.uuid eq UUID.fromString(userApplicationModel.applicationUUID) }.first()
+                // update the progress type
+                application.progressType = userApplicationModel.progressType
+            }
         }
         post("/send-participants-notification") {
-
+            //TODO pair both apps with firebase
         }
         post("/update-staff-approval") {
             val user = call.receive<EmployeeModel>()
