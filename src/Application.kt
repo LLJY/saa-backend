@@ -20,7 +20,7 @@ import kotlin.collections.ArrayList
 
 val argon2: Argon2 = Argon2Factory.create()
 suspend fun argonHash(password: String): String {
-    var returnString = ""
+    var returnString: String
     withContext(Dispatchers.IO) {
         returnString = argon2.hash(32, 65536, 4, password.toCharArray())
     }
@@ -60,7 +60,7 @@ fun Application.module() {
         }
         post("/login-staff") {
             // as a fallback, return nothing.
-            var returnValue: String = ""
+            var returnValue = ""
             val loginInfo = call.receive<LoginUserRoute>()
             println(loginInfo.toString())
             newSuspendedTransaction(Dispatchers.IO) {
@@ -236,7 +236,7 @@ fun Application.module() {
             val application = call.receive<CourseApplyModel>()
             newSuspendedTransaction(Dispatchers.IO) {
                 val courseDao = CourseDao.find { Courses.uuid eq UUID.fromString(application.course.uuid) }.first()
-                val courseApplicationDao = CourseApplicationDao.new {
+                CourseApplicationDao.new {
                     participant =
                         ParticipantDao.find { Participants.uuid eq UUID.fromString(application.userUUID) }.first()
                     progressType = 1 // start off with not approved
@@ -250,7 +250,7 @@ fun Application.module() {
                 val fellowShipDao =
                     FellowShipDao.find { FellowShips.uuid eq UUID.fromString(application.fellowship.uuid) }.first()
                 // create new application
-                val fellowShipApplicationDao = FellowShipApplicationDao.new {
+                FellowShipApplicationDao.new {
                     participant =
                         ParticipantDao.find { Participants.uuid eq UUID.fromString(application.userUUID) }.first()
                     progressType = 1 // start off with not approved

@@ -168,7 +168,7 @@ suspend fun createCourseFromCourseModel(courseModel: CourseModel) {
                     endDate = courseModel.endDate
                     applicationDeadline = courseModel.applicationDeadline
                 }
-                val course = CourseDao.new {
+                CourseDao.new {
                     courseInfo = info
                     learningOutcomes = courseModel.learningOutcomes
                     whoShouldAttend = courseModel.attending
