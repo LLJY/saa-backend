@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -11,13 +12,13 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 import kotlin.collections.ArrayList
 
-fun dbConnect(){
+fun dbConnect() {
     val sqlSecret = """.5k]A9z4[k?VJszna%{]Zc89=LYVPKD"""
     val config = HikariConfig().apply {
-        jdbcUrl         = "jdbc:mysql://localhost/saa_db"
+        jdbcUrl = "jdbc:mysql://localhost/saa_db"
         driverClassName = "com.mysql.cj.jdbc.Driver"
-        username        = "hubble_user"
-        password        = sqlSecret
+        username = "hubble_user"
+        password = sqlSecret
         maximumPoolSize = 10
     }
     val dataSource = HikariDataSource(config)
@@ -25,15 +26,43 @@ fun dbConnect(){
     // create the schema
     println("Creating db schema (will automatically skip if already created)")
     transaction {
-        SchemaUtils.createMissingTablesAndColumns(Persons, Participants, Employees, CourseInfos, Courses, FellowShips, Diplomas, Scholarships, Applications, FellowShipApplications, CourseApplications, ScholarShipApplications, DiplomaApplications)
-        SchemaUtils.create(Persons, Participants, Employees, CourseInfos, Courses, FellowShips, Diplomas, Scholarships, Applications, FellowShipApplications, CourseApplications, ScholarShipApplications, DiplomaApplications)
+        SchemaUtils.createMissingTablesAndColumns(
+                Persons,
+                Participants,
+                Employees,
+                CourseInfos,
+                Courses,
+                FellowShips,
+                Diplomas,
+                Scholarships,
+                Applications,
+                FellowShipApplications,
+                CourseApplications,
+                ScholarShipApplications,
+                DiplomaApplications
+        )
+        SchemaUtils.create(
+                Persons,
+                Participants,
+                Employees,
+                CourseInfos,
+                Courses,
+                FellowShips,
+                Diplomas,
+                Scholarships,
+                Applications,
+                FellowShipApplications,
+                CourseApplications,
+                ScholarShipApplications,
+                DiplomaApplications
+        )
     }
 }
 
 suspend fun createEmployeeFromUser(user: UserStaff) {
     withContext(Dispatchers.IO) {
         val hash = argonHash(user.password)
-        newSuspendedTransaction(Dispatchers.IO) {
+        newSuspendedTransaction {
             val person = PersonDao.new {
                 firstName = user.firstName
                 middleName = user.middleName
@@ -59,23 +88,27 @@ suspend fun updateEmployeeFromUser(user: UserStaff) {
     withContext(Dispatchers.IO) {
         // leave the hash blank if update did not provide a new password
         val hash = if (!user.password.isBlank()) argonHash(user.password) else ""
-        newSuspendedTransaction(Dispatchers.IO) {
-            val employee = EmployeeDao.find { Employees.uuid eq UUID.fromString(user.uuid) }.first()
-            val person = employee.userInfo
-            person.firstName = user.firstName
-            person.middleName = user.middleName
-            person.lastName = user.lastName
-            person.email = user.email
-            person.dateOfBirth = user.dateOfBirth
-            // avoid making password hash blank
-            if (hash.isNotBlank()) {
-                person.passwordHash = hash
+        newSuspendedTransaction {
+            try {
+                val employee = EmployeeDao.find { Employees.uuid eq UUID.fromString(user.uuid) }.first()
+                val person = employee.userInfo
+                person.firstName = user.firstName
+                person.middleName = user.middleName
+                person.lastName = user.lastName
+                person.email = user.email
+                person.dateOfBirth = user.dateOfBirth
+                // avoid making password hash blank
+                if (hash.isNotBlank()) {
+                    person.passwordHash = hash
+                }
+                person.passportNumber = user.passportNumber
+                person.passportExpiry = user.passportExpiry
+                person.country = user.country
+                person.contactNumber = user.contactNumber.toString()
+                person.notificationToken = "0"
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
             }
-            person.passportNumber = user.passportNumber
-            person.passportExpiry = user.passportExpiry
-            person.country = user.country
-            person.contactNumber = user.contactNumber.toString()
-            person.notificationToken = "0"
         }
     }
 }
@@ -83,22 +116,26 @@ suspend fun updateEmployeeFromUser(user: UserStaff) {
 suspend fun getEmployeeInfo(uuid: String): UserStaff {
     var returnStaff = UserStaff()
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val employee = EmployeeDao.find { Employees.uuid eq UUID.fromString(uuid) }.first()
-            returnStaff = UserStaff(
-                    employee.uuid.toString(),
-                    employee.userInfo.firstName,
-                    employee.userInfo.middleName,
-                    employee.userInfo.lastName,
-                    employee.userType,
-                    employee.userInfo.email,
-                    employee.userInfo.passportNumber,
-                    employee.userInfo.passportExpiry,
-                    employee.userInfo.dateOfBirth,
-                    employee.userInfo.country,
-                    "",
-                    employee.userInfo.contactNumber.toInt()
-            )
+        newSuspendedTransaction {
+            try {
+                val employee = EmployeeDao.find { Employees.uuid eq UUID.fromString(uuid) }.first()
+                returnStaff = UserStaff(
+                        employee.uuid.toString(),
+                        employee.userInfo.firstName,
+                        employee.userInfo.middleName,
+                        employee.userInfo.lastName,
+                        employee.userType,
+                        employee.userInfo.email,
+                        employee.userInfo.passportNumber,
+                        employee.userInfo.passportExpiry,
+                        employee.userInfo.dateOfBirth,
+                        employee.userInfo.country,
+                        "",
+                        employee.userInfo.contactNumber.toInt()
+                )
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
+            }
         }
     }
     return returnStaff
@@ -125,22 +162,26 @@ fun convertCourseDaoToCourseModel(courseDao: CourseDao): CourseModel {
 suspend fun createCourseFromCourseModel(courseModel: CourseModel) {
     // launch in a coroutine
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val info = CourseInfoDao.new {
-                title = courseModel.title
-                startDate = courseModel.startDate
-                endDate = courseModel.endDate
-                applicationDeadline = courseModel.applicationDeadline
-            }
-            val course = CourseDao.new {
-                courseInfo = info
-                learningOutcomes = courseModel.learningOutcomes
-                whoShouldAttend = courseModel.attending
-                prerequisites = courseModel.prerequisites
-                learningActivities = courseModel.learningActivities
-                language = courseModel.language
-                covered = courseModel.covered
-                fees = courseModel.fees
+        newSuspendedTransaction {
+            try {
+                val info = CourseInfoDao.new {
+                    title = courseModel.title
+                    startDate = courseModel.startDate
+                    endDate = courseModel.endDate
+                    applicationDeadline = courseModel.applicationDeadline
+                }
+                val course = CourseDao.new {
+                    courseInfo = info
+                    learningOutcomes = courseModel.learningOutcomes
+                    whoShouldAttend = courseModel.attending
+                    prerequisites = courseModel.prerequisites
+                    learningActivities = courseModel.learningActivities
+                    language = courseModel.language
+                    covered = courseModel.covered
+                    fees = courseModel.fees
+                }
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
             }
         }
     }
@@ -149,31 +190,39 @@ suspend fun createCourseFromCourseModel(courseModel: CourseModel) {
 suspend fun updateCourseFromCourseModel(courseModel: CourseModel) {
     // launch in a coroutine
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            // take the first one, uuid is unique
-            val course = CourseDao.find { Courses.uuid eq UUID.fromString(courseModel.uuid) }.first()
-            // update all the fields
-            course.courseInfo.title = courseModel.title
-            course.courseInfo.startDate = courseModel.startDate
-            course.courseInfo.endDate = courseModel.endDate
-            course.courseInfo.applicationDeadline = courseModel.applicationDeadline
-            course.learningOutcomes = courseModel.learningOutcomes
-            course.whoShouldAttend = courseModel.attending
-            course.prerequisites = courseModel.prerequisites
-            course.learningActivities = courseModel.learningActivities
-            course.language = courseModel.language
-            course.covered = courseModel.covered
-            course.fees = courseModel.fees
+        newSuspendedTransaction {
+            try {
+                // take the first one, uuid is unique
+                val course = CourseDao.find { Courses.uuid eq UUID.fromString(courseModel.uuid) }.first()
+                // update all the fields
+                course.courseInfo.title = courseModel.title
+                course.courseInfo.startDate = courseModel.startDate
+                course.courseInfo.endDate = courseModel.endDate
+                course.courseInfo.applicationDeadline = courseModel.applicationDeadline
+                course.learningOutcomes = courseModel.learningOutcomes
+                course.whoShouldAttend = courseModel.attending
+                course.prerequisites = courseModel.prerequisites
+                course.learningActivities = courseModel.learningActivities
+                course.language = courseModel.language
+                course.covered = courseModel.covered
+                course.fees = courseModel.fees
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
+            }
         }
     }
 }
 
 suspend fun deleteCourseFromCourseModel(courseModel: CourseModel) {
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val course = CourseDao.find { Courses.uuid eq UUID.fromString(courseModel.uuid) }.first()
-            course.delete()
-            course.courseInfo.delete()
+        newSuspendedTransaction {
+            try {
+                val course = CourseDao.find { Courses.uuid eq UUID.fromString(courseModel.uuid) }.first()
+                course.delete()
+                course.courseInfo.delete()
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
+            }
         }
     }
 }
@@ -198,18 +247,22 @@ fun convertFellowshipDaoToFellowshipModel(fellowShipDao: FellowShipDao): Fellows
  */
 suspend fun createFellowshipFromFellowshipModel(fellowshipModel: FellowshipModel) {
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            // get the course that matches the id
-            val course = CourseDao.find { Courses.uuid eq UUID.fromString(fellowshipModel.course.uuid) }.first()
-            val ci = CourseInfoDao.new {
-                title = fellowshipModel.title
-                applicationDeadline = fellowshipModel.applicationDeadline
-            }
-            // create the fellowship
-            FellowShipDao.new {
-                outline = fellowshipModel.outline
-                courseInfo = ci
-                fellowShipCourse = course
+        newSuspendedTransaction {
+            try {
+                // get the course that matches the id
+                val course = CourseDao.find { Courses.uuid eq UUID.fromString(fellowshipModel.course.uuid) }.first()
+                val ci = CourseInfoDao.new {
+                    title = fellowshipModel.title
+                    applicationDeadline = fellowshipModel.applicationDeadline
+                }
+                // create the fellowship
+                FellowShipDao.new {
+                    outline = fellowshipModel.outline
+                    courseInfo = ci
+                    fellowShipCourse = course
+                }
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
             }
         }
     }
@@ -221,12 +274,18 @@ suspend fun createFellowshipFromFellowshipModel(fellowshipModel: FellowshipModel
  */
 suspend fun updateFellowshipFromFellowshipModel(fellowshipModel: FellowshipModel) {
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val fellowship = FellowShipDao.find { FellowShips.uuid eq UUID.fromString(fellowshipModel.uuid) }.first()
-            fellowship.courseInfo.applicationDeadline = fellowshipModel.applicationDeadline
-            fellowship.courseInfo.title = fellowshipModel.title
-            fellowship.outline = fellowshipModel.outline
-            fellowship.fellowShipCourse = CourseDao.find { Courses.uuid eq UUID.fromString(fellowshipModel.course.uuid) }.first()
+        newSuspendedTransaction {
+            try {
+                val fellowship =
+                        FellowShipDao.find { FellowShips.uuid eq UUID.fromString(fellowshipModel.uuid) }.first()
+                fellowship.courseInfo.applicationDeadline = fellowshipModel.applicationDeadline
+                fellowship.courseInfo.title = fellowshipModel.title
+                fellowship.outline = fellowshipModel.outline
+                fellowship.fellowShipCourse =
+                        CourseDao.find { Courses.uuid eq UUID.fromString(fellowshipModel.course.uuid) }.first()
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
+            }
         }
     }
 }
@@ -237,9 +296,14 @@ suspend fun updateFellowshipFromFellowshipModel(fellowshipModel: FellowshipModel
  */
 suspend fun deleteFellowshipFromFellowshipModel(fellowshipModel: FellowshipModel) {
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val fellowship = FellowShipDao.find { FellowShips.uuid eq UUID.fromString(fellowshipModel.uuid) }.first()
-            fellowship.delete()
+        newSuspendedTransaction {
+            try {
+                val fellowship =
+                        FellowShipDao.find { FellowShips.uuid eq UUID.fromString(fellowshipModel.uuid) }.first()
+                fellowship.delete()
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
+            }
         }
     }
 }
@@ -266,17 +330,21 @@ fun convertDiplomaDaoToDiplomaModel(diplomaDao: DiplomaDao): DiplomaModel {
  */
 suspend fun createDiplomaFromDiplomaModel(diplomaModel: DiplomaModel) {
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val ci = CourseInfoDao.new {
-                title = diplomaModel.title
-                startDate = diplomaModel.startDate
-                endDate = diplomaModel.endDate
-                applicationDeadline = diplomaModel.applicationDeadline
-            }
-            DiplomaDao.new {
-                courseInfo = ci
-                fees = diplomaModel.fees
-                outline = diplomaModel.outline
+        newSuspendedTransaction {
+            try {
+                val ci = CourseInfoDao.new {
+                    title = diplomaModel.title
+                    startDate = diplomaModel.startDate
+                    endDate = diplomaModel.endDate
+                    applicationDeadline = diplomaModel.applicationDeadline
+                }
+                DiplomaDao.new {
+                    courseInfo = ci
+                    fees = diplomaModel.fees
+                    outline = diplomaModel.outline
+                }
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
             }
         }
     }
@@ -288,14 +356,18 @@ suspend fun createDiplomaFromDiplomaModel(diplomaModel: DiplomaModel) {
  */
 suspend fun updateDiplomaFromDiplomaModel(diplomaModel: DiplomaModel) {
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val diploma = DiplomaDao.find { Diplomas.uuid eq UUID.fromString(diplomaModel.uuid) }.first()
-            diploma.courseInfo.title = diplomaModel.title
-            diploma.courseInfo.startDate = diplomaModel.startDate
-            diploma.courseInfo.endDate = diplomaModel.endDate
-            diploma.courseInfo.applicationDeadline = diplomaModel.applicationDeadline
-            diploma.outline = diplomaModel.outline
-            diploma.fees = diplomaModel.fees
+        newSuspendedTransaction {
+            try {
+                val diploma = DiplomaDao.find { Diplomas.uuid eq UUID.fromString(diplomaModel.uuid) }.first()
+                diploma.courseInfo.title = diplomaModel.title
+                diploma.courseInfo.startDate = diplomaModel.startDate
+                diploma.courseInfo.endDate = diplomaModel.endDate
+                diploma.courseInfo.applicationDeadline = diplomaModel.applicationDeadline
+                diploma.outline = diplomaModel.outline
+                diploma.fees = diplomaModel.fees
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
+            }
         }
     }
 }
@@ -306,9 +378,13 @@ suspend fun updateDiplomaFromDiplomaModel(diplomaModel: DiplomaModel) {
  */
 suspend fun deleteDiplomaFromDiplomaModel(diplomaModel: DiplomaModel) {
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val diploma = DiplomaDao.find { Diplomas.uuid eq UUID.fromString(diplomaModel.uuid) }.first()
-            diploma.delete()
+        newSuspendedTransaction {
+            try {
+                val diploma = DiplomaDao.find { Diplomas.uuid eq UUID.fromString(diplomaModel.uuid) }.first()
+                diploma.delete()
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
+            }
         }
     }
 }
@@ -334,13 +410,17 @@ fun convertScholarshipDaoToScholarshipModel(scholarshipDao: ScholarshipDao): Sch
  */
 suspend fun createScholarshipFromScholarshipModel(scholarshipModel: ScholarshipModel) {
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            ScholarshipDao.new {
-                title = scholarshipModel.title
-                eligibility = scholarshipModel.eligibility
-                benefits = scholarshipModel.benefits
-                bondYears = scholarshipModel.bondTime
-                outline = scholarshipModel.outline
+        newSuspendedTransaction {
+            try {
+                ScholarshipDao.new {
+                    title = scholarshipModel.title
+                    eligibility = scholarshipModel.eligibility
+                    benefits = scholarshipModel.benefits
+                    bondYears = scholarshipModel.bondTime
+                    outline = scholarshipModel.outline
+                }
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
             }
         }
     }
@@ -352,13 +432,18 @@ suspend fun createScholarshipFromScholarshipModel(scholarshipModel: ScholarshipM
  */
 suspend fun updateScholarshipFromScholarshipModel(scholarshipModel: ScholarshipModel) {
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val scholarship = ScholarshipDao.find { Scholarships.uuid eq UUID.fromString(scholarshipModel.uuid) }.first()
-            scholarship.title = scholarshipModel.title
-            scholarship.eligibility = scholarshipModel.eligibility
-            scholarship.benefits = scholarshipModel.benefits
-            scholarship.bondYears = scholarshipModel.bondTime
-            scholarship.outline = scholarshipModel.outline
+        newSuspendedTransaction {
+            try {
+                val scholarship =
+                        ScholarshipDao.find { Scholarships.uuid eq UUID.fromString(scholarshipModel.uuid) }.first()
+                scholarship.title = scholarshipModel.title
+                scholarship.eligibility = scholarshipModel.eligibility
+                scholarship.benefits = scholarshipModel.benefits
+                scholarship.bondYears = scholarshipModel.bondTime
+                scholarship.outline = scholarshipModel.outline
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
+            }
         }
     }
 }
@@ -369,9 +454,14 @@ suspend fun updateScholarshipFromScholarshipModel(scholarshipModel: ScholarshipM
  */
 suspend fun deleteScholarshipFromScholarshipModel(scholarshipModel: ScholarshipModel) {
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val scholarship = ScholarshipDao.find { Scholarships.uuid eq UUID.fromString(scholarshipModel.uuid) }.first()
-            scholarship.delete()
+        newSuspendedTransaction {
+            try {
+                val scholarship =
+                        ScholarshipDao.find { Scholarships.uuid eq UUID.fromString(scholarshipModel.uuid) }.first()
+                scholarship.delete()
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
+            }
         }
     }
 }
@@ -379,20 +469,25 @@ suspend fun deleteScholarshipFromScholarshipModel(scholarshipModel: ScholarshipM
 suspend fun getCourseApplicants(uuid: UUID): List<UserApplicationModel> {
     val returnList = ArrayList<UserApplicationModel>()
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val course = CourseDao.find { Courses.uuid eq uuid }.first()
-            for (application in course.applications) {
-                val userInfo = application.applicationInfo.participant.userInfo
-                val fullName = if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
-                returnList.add(
-                        UserApplicationModel(
-                                fullName,
-                                application.applicationInfo.progressType,
-                                application.uuid.toString(),
-                                userInfo.uuid.toString(),
-                                0 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
-                        )
-                )
+        newSuspendedTransaction {
+            try {
+                val course = CourseDao.find { Courses.uuid eq uuid }.first()
+                for (application in course.applications) {
+                    val userInfo = application.applicationInfo.participant.userInfo
+                    val fullName =
+                            if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                    returnList.add(
+                            UserApplicationModel(
+                                    fullName,
+                                    application.applicationInfo.progressType,
+                                    application.uuid.toString(),
+                                    userInfo.uuid.toString(),
+                                    0 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                            )
+                    )
+                }
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
             }
         }
     }
@@ -402,20 +497,25 @@ suspend fun getCourseApplicants(uuid: UUID): List<UserApplicationModel> {
 suspend fun getFellowshipApplicants(uuid: UUID): List<UserApplicationModel> {
     val returnList = ArrayList<UserApplicationModel>()
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val fellowship = FellowShipDao.find { FellowShips.uuid eq uuid }.first()
-            for (application in fellowship.applications) {
-                val userInfo = application.application.participant.userInfo
-                val fullName = if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
-                returnList.add(
-                        UserApplicationModel(
-                                fullName,
-                                application.application.progressType,
-                                application.uuid.toString(),
-                                userInfo.uuid.toString(),
-                                1 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
-                        )
-                )
+        newSuspendedTransaction {
+            try {
+                val fellowship = FellowShipDao.find { FellowShips.uuid eq uuid }.first()
+                for (application in fellowship.applications) {
+                    val userInfo = application.application.participant.userInfo
+                    val fullName =
+                            if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                    returnList.add(
+                            UserApplicationModel(
+                                    fullName,
+                                    application.application.progressType,
+                                    application.uuid.toString(),
+                                    userInfo.uuid.toString(),
+                                    1 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                            )
+                    )
+                }
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
             }
         }
     }
@@ -425,20 +525,25 @@ suspend fun getFellowshipApplicants(uuid: UUID): List<UserApplicationModel> {
 suspend fun getScholarshipApplicants(uuid: UUID): List<UserApplicationModel> {
     val returnList = ArrayList<UserApplicationModel>()
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val scholarship = ScholarshipDao.find { Scholarships.uuid eq uuid }.first()
-            for (application in scholarship.applications) {
-                val userInfo = application.application.participant.userInfo
-                val fullName = if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
-                returnList.add(
-                        UserApplicationModel(
-                                fullName,
-                                application.application.progressType,
-                                application.uuid.toString(),
-                                userInfo.uuid.toString(),
-                                2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
-                        )
-                )
+        newSuspendedTransaction {
+            try {
+                val scholarship = ScholarshipDao.find { Scholarships.uuid eq uuid }.first()
+                for (application in scholarship.applications) {
+                    val userInfo = application.application.participant.userInfo
+                    val fullName =
+                            if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                    returnList.add(
+                            UserApplicationModel(
+                                    fullName,
+                                    application.application.progressType,
+                                    application.uuid.toString(),
+                                    userInfo.uuid.toString(),
+                                    2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                            )
+                    )
+                }
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
             }
         }
     }
@@ -448,24 +553,47 @@ suspend fun getScholarshipApplicants(uuid: UUID): List<UserApplicationModel> {
 suspend fun getDiplomaApplications(uuid: UUID): List<UserApplicationModel> {
     val returnList = ArrayList<UserApplicationModel>()
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
-            val diploma = DiplomaDao.find { Diplomas.uuid eq uuid }.first()
-            for (application in diploma.applications) {
-                val userInfo = application.application.participant.userInfo
-                val fullName = if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
-                returnList.add(
-                        UserApplicationModel(
-                                fullName,
-                                application.application.progressType,
-                                application.uuid.toString(),
-                                userInfo.uuid.toString(),
-                                2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
-                        )
-                )
+        newSuspendedTransaction {
+            try {
+                val diploma = DiplomaDao.find { Diplomas.uuid eq uuid }.first()
+                for (application in diploma.applications) {
+                    val userInfo = application.application.participant.userInfo
+                    val fullName =
+                            if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                    returnList.add(
+                            UserApplicationModel(
+                                    fullName,
+                                    application.application.progressType,
+                                    application.uuid.toString(),
+                                    userInfo.uuid.toString(),
+                                    2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                            )
+                    )
+                }
+            } catch (ex: ExposedSQLException) {
+                println(ex.toString())
             }
         }
     }
     return returnList
+}
+
+suspend fun getParticipantCourseApplications(uuid: UUID): List<CourseApplicationModel> {
+    val returnList = ArrayList<CourseApplicationModel>()
+    withContext(Dispatchers.IO) {
+        newSuspendedTransaction(Dispatchers.IO) {
+            try {
+                val courseApplications = CourseApplicationDao.find { }
+                for (application in applications) {
+                    if (application.course != null) {
+
+                    }
+                }
+            } catch (ex: Exception) {
+
+            }
+        }
+    }
 }
 
 

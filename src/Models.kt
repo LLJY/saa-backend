@@ -107,3 +107,27 @@ data class EmployeeModel(var uuid: String, var fullName: String, var dob: Long, 
 
 @Serializable
 data class LoginUserRoute(var email: String, var password: String)
+
+@Serializable
+data class CourseApplicationModel(
+        var course: CourseModel,
+        var progressType: Int
+)
+
+@Serializable
+data class FellowshipApplicationModel(
+        var fellowship: FellowshipModel,
+        var progressType: Int
+)
+
+@Serializable
+data class DiplomaApplicationModel(
+        var diploma: DiplomaModel,
+        var progressType: Int
+)
+
+@Serializable
+data class ScholarshipApplicationModel(
+        var scholarship: ScholarshipModel,
+        var progressType: Int
+)

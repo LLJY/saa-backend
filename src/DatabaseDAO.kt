@@ -147,6 +147,7 @@ class ParticipantDao(id: EntityID<Int>) : IntEntity(id) {
     var organisation by Participants.organisation
     var jobTitle by Participants.jobTitle
     var userInfo by PersonDao referencedOn Participants.userInfo
+    val applications by ApplicationDao referrersOn Applications.participant
 }
 
 object Applications: IntIdTable(){
@@ -161,21 +162,13 @@ class ApplicationDao(id: EntityID<Int>) : IntEntity(id) {
     var progressType by Applications.progressType
     var participant by ParticipantDao referencedOn Applications.participant
 }
-
 object CourseApplications: IntIdTable() {
-    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
+    val uuid = ScholarShipApplications.uuid("uuid").autoGenerate().uniqueIndex()
     val applicationInfo = reference("application_ref", Applications)
     val course = reference("course_ref", Courses)
 }
-class CourseApplicationDao(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<CourseApplicationDao>(CourseApplications)
-
-    var uuid by Applications.uuid
-    var applicationInfo by ApplicationDao referencedOn CourseApplications.applicationInfo
-    var course by CourseDao referencedOn CourseApplications.course
-}
 object FellowShipApplications: IntIdTable(){
-    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
+    val uuid = ScholarShipApplications.uuid("uuid").autoGenerate().uniqueIndex()
     val fellowShip = reference("fellowship_ref", FellowShips)
     val application = reference("application_ref", Applications)
 }

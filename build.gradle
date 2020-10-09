@@ -1,22 +1,26 @@
 buildscript {
     repositories {
         jcenter()
+        maven{
+            url "https://plugins.gradle.org/m2/"
+        }
     }
     
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
         classpath "org.koin:koin-gradle-plugin:$koin_version"
+        classpath "gradle.plugin.com.palantir.graal:gradle-graal:0.7.1-20-g113a84d"
     }
 }
 
 apply plugin: 'kotlin'
 apply plugin: 'application'
 apply plugin: 'kotlinx-serialization'
-
+apply plugin: 'com.palantir.graal'
 group 'com.saa.backend'
 version '0.0.1'
-mainClassName = "io.ktor.server.netty.EngineMain"
+mainClassName = "com.saa.backend.ApplicationKt"
 
 sourceSets {
     main.kotlin.srcDirs = main.java.srcDirs = ['src']
@@ -56,4 +60,14 @@ dependencies {
     implementation "io.ktor:ktor-server-sessions:$ktor_version"
     implementation "io.ktor:ktor-server-host-common:$ktor_version"
     testImplementation "io.ktor:ktor-server-tests:$ktor_version"
+}
+graal {
+    mainClass 'com.saa.backend.ApplicationKt'
+    outputName 'hello-graal'
+    graalVersion '20.2.0'
+    option '--allow-incomplete-classpath'
+    option '--report-unsupported-elements-at-runtime'
+    option '--no-fallback'
+    option '--initialize-at-build-time=ch.qos,org.slf4j'
+    option '--initialize-at-run-time=io.netty'
 }

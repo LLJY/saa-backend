@@ -42,8 +42,22 @@ fun Application.module() {
     install(ContentNegotiation) {
         json(contentType = ContentType.Application.Json)
     }
-
+    val testing = true
     routing {
+        if (testing) {
+            get("/") {
+                call.respondText("HELLO WORLD!")
+            }
+            get("/json") {
+                call.respond(HelloWorld("world"))
+            }
+            post("/test-hash") {
+                val password = call.receive<String>()
+                withContext(Dispatchers.IO) {
+                    call.respond(argonHash(password))
+                }
+            }
+        }
         post("/login-staff") {
             // as a fallback, return nothing.
             var returnValue: String = ""
@@ -355,21 +369,18 @@ fun Application.module() {
             val applications = getDiplomaApplications(UUID.fromString(uuid))
             call.respond(call.respond(applications))
         }
+        post("/get-participant-course-applications") {
 
-        get("/hello-world") {
-            call.respondText("HELLO WORLD!")
         }
+        post("/get-participant-fellowship-applications") {
 
-        get("/json/gson") {
-            call.respond(com.saa.backend.HelloWorld("world"))
         }
-        post("/test-hash") {
-            val password = call.receive<String>()
-            withContext(Dispatchers.IO) {
-                call.respond(argonHash(password))
-            }
-        }
+        post("/get-participant-diploma-applications") {
 
+        }
+        post("/get-participant-scholarship-applications") {
+
+        }
     }
 }
 
