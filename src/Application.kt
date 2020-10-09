@@ -236,59 +236,52 @@ fun Application.module() {
             val application = call.receive<CourseApplyModel>()
             newSuspendedTransaction(Dispatchers.IO) {
                 val courseDao = CourseDao.find { Courses.uuid eq UUID.fromString(application.course.uuid) }.first()
-                // create new application
-                val applicationDao = ApplicationDao.new {
-                    progressType = 1 // start off with not approved
-                    participant = ParticipantDao.find { Participants.uuid eq UUID.fromString(application.userUUID) }.first()
-                }
                 val courseApplicationDao = CourseApplicationDao.new {
-                    applicationInfo = applicationDao
+                    participant =
+                        ParticipantDao.find { Participants.uuid eq UUID.fromString(application.userUUID) }.first()
+                    progressType = 1 // start off with not approved
                     course = courseDao
                 }
             }
         }
         post("/apply-fellowship") {
-            val userApplication = call.receive<FellowshipApplyModel>()
+            val application = call.receive<FellowshipApplyModel>()
             newSuspendedTransaction(Dispatchers.IO) {
-                val fellowShipDao = FellowShipDao.find { FellowShips.uuid eq UUID.fromString(userApplication.fellowship.uuid) }.first()
+                val fellowShipDao =
+                    FellowShipDao.find { FellowShips.uuid eq UUID.fromString(application.fellowship.uuid) }.first()
                 // create new application
-                val applicationDao = ApplicationDao.new {
-                    progressType = 1 // start off with not approved
-                    participant = ParticipantDao.find { Participants.uuid eq UUID.fromString(userApplication.userUUID) }.first()
-                }
                 val fellowShipApplicationDao = FellowShipApplicationDao.new {
-                    application = applicationDao
+                    participant =
+                        ParticipantDao.find { Participants.uuid eq UUID.fromString(application.userUUID) }.first()
+                    progressType = 1 // start off with not approved
                     fellowship = fellowShipDao
                 }
             }
         }
         post("/apply-scholarship") {
-            val userApplication = call.receive<ScholarshipApplyModel>()
+            val application = call.receive<ScholarshipApplyModel>()
             newSuspendedTransaction(Dispatchers.IO) {
-                val scholarshipDao = ScholarshipDao.find { Scholarships.uuid eq UUID.fromString(userApplication.scholarship.uuid) }.first()
+                val scholarshipDao =
+                    ScholarshipDao.find { Scholarships.uuid eq UUID.fromString(application.scholarship.uuid) }.first()
                 // create new application
-                val applicationDao = ApplicationDao.new {
+                ScholarShipApplicationDao.new {
+                    participant =
+                        ParticipantDao.find { Participants.uuid eq UUID.fromString(application.userUUID) }.first()
                     progressType = 1 // start off with not approved
-                    participant = ParticipantDao.find { Participants.uuid eq UUID.fromString(userApplication.userUUID) }.first()
-                }
-                val fellowShipApplicationDao = ScholarShipApplicationDao.new {
-                    application = applicationDao
                     scholarship = scholarshipDao
                 }
             }
 
         }
         post("/apply-diploma") {
-            val userApplication = call.receive<DiplomaApplyModel>()
+            val application = call.receive<DiplomaApplyModel>()
             newSuspendedTransaction(Dispatchers.IO) {
-                val diplomaDao = DiplomaDao.find { Diplomas.uuid eq UUID.fromString(userApplication.diploma.uuid) }.first()
+                val diplomaDao = DiplomaDao.find { Diplomas.uuid eq UUID.fromString(application.diploma.uuid) }.first()
                 // create new application
-                val applicationDao = ApplicationDao.new {
-                    progressType = 1 // start off with not approved
-                    participant = ParticipantDao.find { Participants.uuid eq UUID.fromString(userApplication.userUUID) }.first()
-                }
                 DiplomaApplicationDao.new {
-                    application = applicationDao
+                    participant =
+                        ParticipantDao.find { Participants.uuid eq UUID.fromString(application.userUUID) }.first()
+                    progressType = 1 // start off with not approved
                     diploma = diplomaDao
                 }
             }
@@ -297,9 +290,33 @@ fun Application.module() {
             // this will be the application uuid
             val userApplicationModel = call.receive<UserApplicationModel>()
             newSuspendedTransaction(Dispatchers.IO) {
-                val application = ApplicationDao.find { Applications.uuid eq UUID.fromString(userApplicationModel.applicationUUID) }.first()
-                // update the progress type
-                application.progressType = userApplicationModel.progressType
+                // I am using courseApplication index to figure out what kind of course it is and then update accordingly, hacky? I know.
+                when (userApplicationModel.courseApplicationIndex) {
+                    0 -> {
+                        val courseApplication =
+                            CourseApplicationDao.find { CourseApplications.uuid eq UUID.fromString(userApplicationModel.applicationUUID) }
+                                .first()
+                        courseApplication.progressType = userApplicationModel.progressType
+                    }
+                    1 -> {
+                        val fellowshipApplication = FellowShipApplicationDao.find {
+                            FellowShipApplications.uuid eq UUID.fromString(userApplicationModel.applicationUUID)
+                        }.first()
+                        fellowshipApplication.progressType = userApplicationModel.progressType
+                    }
+                    2 -> {
+                        val scholarshipApplication = ScholarShipApplicationDao.find {
+                            ScholarShipApplications.uuid eq UUID.fromString(userApplicationModel.applicationUUID)
+                        }.first()
+                        scholarshipApplication.progressType = userApplicationModel.progressType
+                    }
+                    3 -> {
+                        val diplomaApplication = DiplomaApplicationDao.find {
+                            DiplomaApplications.uuid eq UUID.fromString(userApplicationModel.applicationUUID)
+                        }.first()
+                        diplomaApplication.progressType = userApplicationModel.progressType
+                    }
+                }
             }
         }
         post("/send-participants-notification") {
@@ -370,16 +387,20 @@ fun Application.module() {
             call.respond(call.respond(applications))
         }
         post("/get-participant-course-applications") {
-
+            val userId = call.receive<String>()
+            call.respond(getParticipantCourseApplications(UUID.fromString(userId)))
         }
         post("/get-participant-fellowship-applications") {
-
+            val userId = call.receive<String>()
+            call.respond(getParticipantFellowshipApplications(UUID.fromString(userId)))
         }
         post("/get-participant-diploma-applications") {
-
+            val userId = call.receive<String>()
+            call.respond(getParticipantDiplomaApplications(UUID.fromString(userId)))
         }
         post("/get-participant-scholarship-applications") {
-
+            val userId = call.receive<String>()
+            call.respond(getParticipantScholarshipApplications(UUID.fromString(userId)))
         }
     }
 }

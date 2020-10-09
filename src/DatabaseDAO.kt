@@ -147,61 +147,67 @@ class ParticipantDao(id: EntityID<Int>) : IntEntity(id) {
     var organisation by Participants.organisation
     var jobTitle by Participants.jobTitle
     var userInfo by PersonDao referencedOn Participants.userInfo
-    val applications by ApplicationDao referrersOn Applications.participant
+    val courseApplications by CourseApplicationDao referrersOn CourseApplications.participant
+    val fellowshipApplications by FellowShipApplicationDao referrersOn FellowShipApplications.participant
+    val scholarshipApplications by ScholarShipApplicationDao referrersOn ScholarShipApplications.participant
+    val diplomaApplications by DiplomaApplicationDao referrersOn DiplomaApplications.participant
 }
-
-object Applications: IntIdTable(){
+object CourseApplications: IntIdTable() {
     val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val progressType = integer("progress_type") // 0, rejected, 1 not approved, 2 in progress, 3 completed
     val participant = reference("participant_ref", Participants)
-}
-class ApplicationDao(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<ApplicationDao>(Applications)
-
-    var uuid by Applications.uuid
-    var progressType by Applications.progressType
-    var participant by ParticipantDao referencedOn Applications.participant
-}
-object CourseApplications: IntIdTable() {
-    val uuid = ScholarShipApplications.uuid("uuid").autoGenerate().uniqueIndex()
-    val applicationInfo = reference("application_ref", Applications)
     val course = reference("course_ref", Courses)
 }
-object FellowShipApplications: IntIdTable(){
-    val uuid = ScholarShipApplications.uuid("uuid").autoGenerate().uniqueIndex()
+
+class CourseApplicationDao(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<CourseApplicationDao>(CourseApplications)
+
+    var uuid by CourseApplications.uuid
+    var course by CourseDao referencedOn CourseApplications.course
+    var progressType by CourseApplications.progressType // 0, rejected, 1 not approved, 2 in progress, 3 completed
+    var participant by ParticipantDao referencedOn CourseApplications.participant
+}
+object FellowShipApplications: IntIdTable() {
+    val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val fellowShip = reference("fellowship_ref", FellowShips)
-    val application = reference("application_ref", Applications)
+    val progressType = integer("progress_type") // 0, rejected, 1 not approved, 2 in progress, 3 completed
+    val participant = reference("participant_ref", Participants)
 }
 class FellowShipApplicationDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<FellowShipApplicationDao>(FellowShipApplications)
 
     var uuid by FellowShipApplications.uuid
     var fellowship by FellowShipDao referencedOn FellowShipApplications.fellowShip
-    var application by ApplicationDao referencedOn FellowShipApplications.application
+    var progressType by FellowShipApplications.progressType // 0, rejected, 1 not approved, 2 in progress, 3 completed
+    var participant by ParticipantDao referencedOn FellowShipApplications.participant
 }
-object ScholarShipApplications: IntIdTable(){
+object ScholarShipApplications: IntIdTable() {
     val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val scholarship = reference("scholarship_ref", Scholarships)
-    val application = reference("application_ref", Applications)
+    val progressType = integer("progress_type") // 0, rejected, 1 not approved, 2 in progress, 3 completed
+    val participant = reference("participant_ref", Participants)
 }
 class ScholarShipApplicationDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<ScholarShipApplicationDao>(ScholarShipApplications)
 
     var uuid by ScholarShipApplications.uuid
     var scholarship by ScholarshipDao referencedOn ScholarShipApplications.scholarship
-    var application by ApplicationDao referencedOn ScholarShipApplications.application
+    var progressType by ScholarShipApplications.progressType // 0, rejected, 1 not approved, 2 in progress, 3 completed
+    var participant by ParticipantDao referencedOn ScholarShipApplications.participant
 }
-object DiplomaApplications: IntIdTable(){
+object DiplomaApplications: IntIdTable() {
     val uuid = uuid("uuid").autoGenerate().uniqueIndex()
     val diploma = reference("diploma_ref", Diplomas)
-    val application = reference("application_ref", Applications)
+    val progressType = integer("progress_type") // 0, rejected, 1 not approved, 2 in progress, 3 completed
+    val participant = reference("participant_ref", Participants)
 }
 class DiplomaApplicationDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<DiplomaApplicationDao>(DiplomaApplications)
 
     var uuid by DiplomaApplications.uuid
     var diploma by DiplomaDao referencedOn DiplomaApplications.diploma
-    var application by ApplicationDao referencedOn DiplomaApplications.application
+    var progressType by DiplomaApplications.progressType // 0, rejected, 1 not approved, 2 in progress, 3 completed
+    var participant by ParticipantDao referencedOn DiplomaApplications.participant
 }
 
 object CourseInfos: IntIdTable() {

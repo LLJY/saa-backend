@@ -26,36 +26,34 @@ fun dbConnect() {
     // create the schema
     println("Creating db schema (will automatically skip if already created)")
     transaction {
-        SchemaUtils.createMissingTablesAndColumns(
-                Persons,
-                Participants,
-                Employees,
-                CourseInfos,
-                Courses,
-                FellowShips,
-                Diplomas,
-                Scholarships,
-                Applications,
-                FellowShipApplications,
-                CourseApplications,
-                ScholarShipApplications,
-                DiplomaApplications
-        )
         SchemaUtils.create(
-                Persons,
-                Participants,
-                Employees,
-                CourseInfos,
-                Courses,
-                FellowShips,
-                Diplomas,
-                Scholarships,
-                Applications,
-                FellowShipApplications,
-                CourseApplications,
-                ScholarShipApplications,
-                DiplomaApplications
+            Persons,
+            Participants,
+            Employees,
+            CourseInfos,
+            Courses,
+            FellowShips,
+            Diplomas,
+            Scholarships,
+            FellowShipApplications,
+            CourseApplications,
+            ScholarShipApplications,
+            DiplomaApplications
         )
+//        SchemaUtils.createMissingTablesAndColumns(
+//            Persons,
+//            Participants,
+//            Employees,
+//            CourseInfos,
+//            Courses,
+//            FellowShips,
+//            Diplomas,
+//            Scholarships,
+//            FellowShipApplications,
+//            CourseApplications,
+//            ScholarShipApplications,
+//            DiplomaApplications
+//        )
     }
 }
 
@@ -473,17 +471,17 @@ suspend fun getCourseApplicants(uuid: UUID): List<UserApplicationModel> {
             try {
                 val course = CourseDao.find { Courses.uuid eq uuid }.first()
                 for (application in course.applications) {
-                    val userInfo = application.applicationInfo.participant.userInfo
+                    val userInfo = application.participant.userInfo
                     val fullName =
-                            if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                        if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
                     returnList.add(
-                            UserApplicationModel(
-                                    fullName,
-                                    application.applicationInfo.progressType,
-                                    application.uuid.toString(),
-                                    userInfo.uuid.toString(),
-                                    0 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
-                            )
+                        UserApplicationModel(
+                            fullName,
+                            application.progressType,
+                            application.uuid.toString(),
+                            userInfo.uuid.toString(),
+                            0 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                        )
                     )
                 }
             } catch (ex: ExposedSQLException) {
@@ -501,17 +499,17 @@ suspend fun getFellowshipApplicants(uuid: UUID): List<UserApplicationModel> {
             try {
                 val fellowship = FellowShipDao.find { FellowShips.uuid eq uuid }.first()
                 for (application in fellowship.applications) {
-                    val userInfo = application.application.participant.userInfo
+                    val userInfo = application.participant.userInfo
                     val fullName =
-                            if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                        if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
                     returnList.add(
-                            UserApplicationModel(
-                                    fullName,
-                                    application.application.progressType,
-                                    application.uuid.toString(),
-                                    userInfo.uuid.toString(),
-                                    1 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
-                            )
+                        UserApplicationModel(
+                            fullName,
+                            application.progressType,
+                            application.uuid.toString(),
+                            userInfo.uuid.toString(),
+                            1 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                        )
                     )
                 }
             } catch (ex: ExposedSQLException) {
@@ -529,17 +527,17 @@ suspend fun getScholarshipApplicants(uuid: UUID): List<UserApplicationModel> {
             try {
                 val scholarship = ScholarshipDao.find { Scholarships.uuid eq uuid }.first()
                 for (application in scholarship.applications) {
-                    val userInfo = application.application.participant.userInfo
+                    val userInfo = application.participant.userInfo
                     val fullName =
-                            if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                        if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
                     returnList.add(
-                            UserApplicationModel(
-                                    fullName,
-                                    application.application.progressType,
-                                    application.uuid.toString(),
-                                    userInfo.uuid.toString(),
-                                    2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
-                            )
+                        UserApplicationModel(
+                            fullName,
+                            application.progressType,
+                            application.uuid.toString(),
+                            userInfo.uuid.toString(),
+                            2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                        )
                     )
                 }
             } catch (ex: ExposedSQLException) {
@@ -557,17 +555,17 @@ suspend fun getDiplomaApplications(uuid: UUID): List<UserApplicationModel> {
             try {
                 val diploma = DiplomaDao.find { Diplomas.uuid eq uuid }.first()
                 for (application in diploma.applications) {
-                    val userInfo = application.application.participant.userInfo
+                    val userInfo = application.participant.userInfo
                     val fullName =
-                            if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
+                        if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
                     returnList.add(
-                            UserApplicationModel(
-                                    fullName,
-                                    application.application.progressType,
-                                    application.uuid.toString(),
-                                    userInfo.uuid.toString(),
-                                    2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
-                            )
+                        UserApplicationModel(
+                            fullName,
+                            application.progressType,
+                            application.uuid.toString(),
+                            userInfo.uuid.toString(),
+                            2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
+                        )
                     )
                 }
             } catch (ex: ExposedSQLException) {
@@ -581,19 +579,96 @@ suspend fun getDiplomaApplications(uuid: UUID): List<UserApplicationModel> {
 suspend fun getParticipantCourseApplications(uuid: UUID): List<CourseApplicationModel> {
     val returnList = ArrayList<CourseApplicationModel>()
     withContext(Dispatchers.IO) {
-        newSuspendedTransaction(Dispatchers.IO) {
+        newSuspendedTransaction {
             try {
-                val courseApplications = CourseApplicationDao.find { }
-                for (application in applications) {
-                    if (application.course != null) {
-
-                    }
+                val courseApplications = ParticipantDao.find { Participants.uuid eq uuid }.first().courseApplications
+                for (application in courseApplications) {
+                    // convert it to something the frontend understands
+                    returnList.add(
+                        CourseApplicationModel(
+                            convertCourseDaoToCourseModel(application.course),
+                            application.progressType
+                        )
+                    )
                 }
             } catch (ex: Exception) {
-
+                println(ex.toString())
             }
         }
     }
+    return returnList
+}
+
+suspend fun getParticipantFellowshipApplications(uuid: UUID): List<FellowshipApplicationModel> {
+    val returnList = ArrayList<FellowshipApplicationModel>()
+    withContext(Dispatchers.IO) {
+        newSuspendedTransaction(Dispatchers.IO) {
+            try {
+                val fellowshipApplications =
+                    ParticipantDao.find { Participants.uuid eq uuid }.first().fellowshipApplications
+                for (application in fellowshipApplications) {
+                    // convert it to something the frontend understands
+                    returnList.add(
+                        FellowshipApplicationModel(
+                            convertFellowshipDaoToFellowshipModel(application.fellowship),
+                            application.progressType
+                        )
+                    )
+                }
+            } catch (ex: Exception) {
+                println(ex.toString())
+            }
+        }
+    }
+    return returnList
+}
+
+suspend fun getParticipantScholarshipApplications(uuid: UUID): List<ScholarshipApplicationModel> {
+    val returnList = ArrayList<ScholarshipApplicationModel>()
+    withContext(Dispatchers.IO) {
+        newSuspendedTransaction(Dispatchers.IO) {
+            try {
+                val scholarshipApplications =
+                    ParticipantDao.find { Participants.uuid eq uuid }.first().scholarshipApplications
+                for (application in scholarshipApplications) {
+                    // convert it to something the frontend understands
+                    returnList.add(
+                        ScholarshipApplicationModel(
+                            convertScholarshipDaoToScholarshipModel(application.scholarship),
+                            application.progressType
+                        )
+                    )
+                }
+            } catch (ex: Exception) {
+                println(ex.toString())
+            }
+        }
+    }
+    return returnList
+}
+
+suspend fun getParticipantDiplomaApplications(uuid: UUID): List<DiplomaApplicationModel> {
+    val returnList = ArrayList<DiplomaApplicationModel>()
+    withContext(Dispatchers.IO) {
+        newSuspendedTransaction(Dispatchers.IO) {
+            try {
+                val diplomaApplicationModel =
+                    ParticipantDao.find { Participants.uuid eq uuid }.first().diplomaApplications
+                for (application in diplomaApplicationModel) {
+                    // convert it to something the frontend understands
+                    returnList.add(
+                        DiplomaApplicationModel(
+                            convertDiplomaDaoToDiplomaModel(application.diploma),
+                            application.progressType
+                        )
+                    )
+                }
+            } catch (ex: Exception) {
+                println(ex.toString())
+            }
+        }
+    }
+    return returnList
 }
 
 
