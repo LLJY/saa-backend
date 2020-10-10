@@ -3,7 +3,23 @@ package com.saa.backend
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class HelloWorld(val hello:String)
+data class HelloWorld(val hello: String)
+
+@Serializable
+data class UserParticipant(
+        var uuid: String,
+        var firstName: String,
+        var lastName: String,
+        var dob: Long,
+        var email: String,
+        var country: String,
+        var passportNumber: String,
+        var passportExpiry: Long,
+        var organisation: String,
+        var jobTitle: String,
+        var password: String,
+        var contactNumber: Int
+)
 
 @Serializable
 data class UserStaff(
@@ -95,7 +111,7 @@ data class UserApplicationModel(
         var fullName: String,
         var progressType: Int, // 0, rejected, 1 not approved, 2 in progress, 3 completed
         var applicationUUID: String,
-        var userUUID: String,
+        var user: UserParticipant,
         var courseApplicationIndex: Int // 0 = course, 1= fellowship, 2=scholarship, 3=diploma
 )
 

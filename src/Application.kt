@@ -5,6 +5,7 @@ import de.mkammerer.argon2.Argon2Factory
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
@@ -14,7 +15,6 @@ import io.ktor.server.netty.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -42,8 +42,17 @@ fun Application.module() {
     install(ContentNegotiation) {
         json(contentType = ContentType.Application.Json)
     }
+    install(Compression)
     val testing = true
     routing {
+        install(CachingHeaders) {
+            options { outgoingContent ->
+                when (outgoingContent.contentType?.withoutParameters()) {
+                    ContentType.Text.CSS -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 24 * 60 * 60))
+                    else -> null
+                }
+            }
+        }
         if (testing) {
             get("/") {
                 call.respondText("HELLO WORLD!")
@@ -110,12 +119,20 @@ fun Application.module() {
         get("/get-courses"){
             val courseList = ArrayList<CourseModel>()
             withContext(Dispatchers.IO) {
-                transaction {
-                    val courses = CourseDao.all()
-                    for (course in courses) {
-                        courseList.add(convertCourseDaoToCourseModel(course))
+                val isSuccessful = newSuspendedTransaction {
+                    try {
+                        val courses = CourseDao.all()
+                        for (course in courses) {
+                            courseList.add(convertCourseDaoToCourseModel(course))
+                        }
+                        true
+                    } catch (ex: Exception) {
+                        println(ex.toString())
+                        false
                     }
-
+                }
+                if (!isSuccessful) {
+                    throw Exception()
                 }
             }
             // assert the type for serialization
@@ -136,11 +153,20 @@ fun Application.module() {
         get("/get-fellowships") {
             val fellowshipList = ArrayList<FellowshipModel>()
             withContext(Dispatchers.IO) {
-                transaction {
-                    val fellowships = FellowShipDao.all()
-                    for (fellowship in fellowships) {
-                        fellowshipList.add(convertFellowshipDaoToFellowshipModel(fellowship))
+                val isSuccessful = newSuspendedTransaction {
+                    try {
+                        val fellowships = FellowShipDao.all()
+                        for (fellowship in fellowships) {
+                            fellowshipList.add(convertFellowshipDaoToFellowshipModel(fellowship))
+                        }
+                        true
+                    } catch (ex: Exception) {
+                        println(ex.toString())
+                        false
                     }
+                }
+                if (!isSuccessful) {
+                    throw Exception()
                 }
             }
             // assert the type for serialization
@@ -161,11 +187,20 @@ fun Application.module() {
         get("/get-diplomas") {
             val diplomaList = ArrayList<DiplomaModel>()
             withContext(Dispatchers.IO) {
-                transaction {
-                    val diplomas = DiplomaDao.all()
-                    for (diploma in diplomas) {
-                        diplomaList.add(convertDiplomaDaoToDiplomaModel(diploma))
+                val isSuccessful = newSuspendedTransaction {
+                    try {
+                        val diplomas = DiplomaDao.all()
+                        for (diploma in diplomas) {
+                            diplomaList.add(convertDiplomaDaoToDiplomaModel(diploma))
+                        }
+                        true
+                    } catch (ex: Exception) {
+                        println(ex.toString())
+                        false
                     }
+                }
+                if (!isSuccessful) {
+                    throw Exception()
                 }
             }
             // assert the type for serialization
@@ -186,12 +221,21 @@ fun Application.module() {
         get("/get-scholarships") {
             val scholarshipList = ArrayList<ScholarshipModel>()
             withContext(Dispatchers.IO) {
-                transaction {
-                    val scholarships = ScholarshipDao.all()
-                    // convert scholarships to the frontend model
-                    for (scholarship in scholarships) {
-                        scholarshipList.add(convertScholarshipDaoToScholarshipModel(scholarship))
+                val isSuccessful = newSuspendedTransaction {
+                    try {
+                        val scholarships = ScholarshipDao.all()
+                        // convert scholarships to the frontend model
+                        for (scholarship in scholarships) {
+                            scholarshipList.add(convertScholarshipDaoToScholarshipModel(scholarship))
+                        }
+                        true
+                    } catch (ex: Exception) {
+                        println(ex.toString())
+                        false
                     }
+                }
+                if (!isSuccessful) {
+                    throw Exception()
                 }
             }
             // assert the type for serialization
@@ -208,23 +252,23 @@ fun Application.module() {
                         val userInfo = staff.userInfo
                         val fullName = if (userInfo.middleName != null) "${userInfo.firstName} ${userInfo.middleName} ${userInfo.lastName}" else "${userInfo.firstName} ${userInfo.lastName}"
                         returnStaffs.add(
-                                EmployeeModel(
-                                        staff.uuid.toString(),
-                                        fullName,
-                                        userInfo.dateOfBirth,
-                                        userInfo.contactNumber,
-                                        userInfo.country,
-                                        userInfo.passportNumber,
-                                        userInfo.passportExpiry,
-                                        userInfo.email,
-                                        when (staff.userType) {
-                                            0 -> "School Head"
-                                            1 -> "Course Manager"
-                                            2 -> "Admin"
-                                            else -> "Unknown"
-                                        },
-                                        staff.approvalStatus
-                                )
+                            EmployeeModel(
+                                staff.uuid.toString(),
+                                fullName,
+                                userInfo.dateOfBirth,
+                                userInfo.contactNumber,
+                                userInfo.country,
+                                userInfo.passportNumber,
+                                userInfo.passportExpiry,
+                                userInfo.email,
+                                when (staff.userType) {
+                                    0 -> "School Head"
+                                    1 -> "Course Manager"
+                                    2 -> "Admin"
+                                    else -> "Unknown"
+                                },
+                                staff.approvalStatus
+                            )
                         )
                     }
                 }
@@ -243,6 +287,7 @@ fun Application.module() {
                     course = courseDao
                 }
             }
+            call.respond(true)
         }
         post("/apply-fellowship") {
             val application = call.receive<FellowshipApplyModel>()
@@ -257,6 +302,7 @@ fun Application.module() {
                     fellowship = fellowShipDao
                 }
             }
+            call.respond(true)
         }
         post("/apply-scholarship") {
             val application = call.receive<ScholarshipApplyModel>()
@@ -270,6 +316,7 @@ fun Application.module() {
                     progressType = 1 // start off with not approved
                     scholarship = scholarshipDao
                 }
+                call.respond(true)
             }
 
         }
@@ -285,6 +332,7 @@ fun Application.module() {
                     diploma = diplomaDao
                 }
             }
+            call.respond(true)
         }
         post("/update-application-progress") {
             // this will be the application uuid
@@ -318,6 +366,7 @@ fun Application.module() {
                     }
                 }
             }
+            call.respond(true)
         }
         post("/send-participants-notification") {
             //TODO pair both apps with firebase
@@ -325,7 +374,7 @@ fun Application.module() {
         post("/update-staff-approval") {
             val user = call.receive<EmployeeModel>()
             withContext(Dispatchers.IO) {
-                transaction {
+                newSuspendedTransaction {
                     val employee = EmployeeDao.find { Employees.uuid eq UUID.fromString(user.uuid) }.first()
                     employee.approvalStatus = user.approvalStatus
                 }
@@ -337,71 +386,103 @@ fun Application.module() {
             createEmployeeFromUser(newUser)
             call.respond("true")
         }
+//         for some odd reason UUID strings from JSON are serialized with the "" appended to them, hence we will remove them using the
+//          removeSurrounding method
         post("/course-applications") {
             // requires UUID
-            val uuid = call.receive<String>()
-            val applications = getCourseApplicants(UUID.fromString(uuid))
+            val uuid = call.receive<String>().removeSurrounding("\"", "\"")
+            val applications = getCourseApplicants(UUID.fromString(uuid)).filter { it.progressType == 1 }
             call.respond(call.respond(applications))
         }
         post("/fellowship-applications") {
             // requires UUID
-            val uuid = call.receive<String>()
-            val applications = getFellowshipApplicants(UUID.fromString(uuid))
+            val uuid = call.receive<String>().removeSurrounding("\"", "\"")
+            val applications = getFellowshipApplicants(UUID.fromString(uuid)).filter { it.progressType == 1 }
             call.respond(call.respond(applications))
         }
         post("/scholarship-applications") {
             // requires UUID
-            val uuid = call.receive<String>()
-            val applications = getScholarshipApplicants(UUID.fromString(uuid))
+            val uuid = call.receive<String>().removeSurrounding("\"", "\"")
+            val applications = getScholarshipApplicants(UUID.fromString(uuid)).filter { it.progressType == 1 }
             call.respond(call.respond(applications))
         }
         post("/diploma-applications") {
             // requires UUID
-            val uuid = call.receive<String>()
-            val applications = getDiplomaApplications(UUID.fromString(uuid))
+            val uuid = call.receive<String>().removeSurrounding("\"", "\"")
+            val applications = getDiplomaApplications(UUID.fromString(uuid)).filter { it.progressType == 1 }
             call.respond(call.respond(applications))
         }
 
         post("/course-applications-approved") {
             // requires UUID
-            val uuid = call.receive<String>()
-            val applications = getCourseApplicants(UUID.fromString(uuid))
+            val uuid = call.receive<String>().removeSurrounding("\"", "\"")
+            val applications = getCourseApplicants(UUID.fromString(uuid)).filter { it.progressType > 1 }
             call.respond(call.respond(applications))
         }
         post("/fellowship-applications-approved") {
             // requires UUID
-            val uuid = call.receive<String>()
-            val applications = getFellowshipApplicants(UUID.fromString(uuid))
+            val uuid = call.receive<String>().removeSurrounding("\"", "\"")
+            val applications = getFellowshipApplicants(UUID.fromString(uuid)).filter { it.progressType > 1 }
             call.respond(call.respond(applications))
         }
         post("/scholarship-applications-approved") {
             // requires UUID
-            val uuid = call.receive<String>()
-            val applications = getScholarshipApplicants(UUID.fromString(uuid))
+            val uuid = call.receive<String>().removeSurrounding("\"", "\"")
+            val applications = getScholarshipApplicants(UUID.fromString(uuid)).filter { it.progressType > 1 }
             call.respond(call.respond(applications))
         }
         post("/diploma-applications-approved") {
             // requires UUID
-            val uuid = call.receive<String>()
-            val applications = getDiplomaApplications(UUID.fromString(uuid))
+            val uuid = call.receive<String>().removeSurrounding("\"", "\"")
+            val applications = getDiplomaApplications(UUID.fromString(uuid)).filter { it.progressType > 1 }
             call.respond(call.respond(applications))
         }
         post("/get-participant-course-applications") {
-            val userId = call.receive<String>()
+            var userId = call.receive<String>()
+            // for some odd reason the parsed string includes quotes, remove them.
+            userId = userId.removeSurrounding("\"", "\"")
             call.respond(getParticipantCourseApplications(UUID.fromString(userId)))
         }
         post("/get-participant-fellowship-applications") {
-            val userId = call.receive<String>()
+            var userId = call.receive<String>()
+            userId = userId.removeSurrounding("\"", "\"")
             call.respond(getParticipantFellowshipApplications(UUID.fromString(userId)))
         }
         post("/get-participant-diploma-applications") {
-            val userId = call.receive<String>()
+            var userId = call.receive<String>()
+            userId = userId.removeSurrounding("\"", "\"")
             call.respond(getParticipantDiplomaApplications(UUID.fromString(userId)))
         }
         post("/get-participant-scholarship-applications") {
-            val userId = call.receive<String>()
+            var userId = call.receive<String>()
+            userId = userId.removeSurrounding("\"", "\"")
             call.respond(getParticipantScholarshipApplications(UUID.fromString(userId)))
         }
+        post("/login-participant") {
+            // as a fallback, return nothing.
+            var returnValue = ""
+            val loginInfo = call.receive<LoginUserRoute>()
+            println(loginInfo.toString())
+            newSuspendedTransaction(Dispatchers.IO) {
+                val userInfo = PersonDao.find { Persons.email eq loginInfo.email }.first()
+                println(userInfo.email)
+                if (argon2.verify(userInfo.passwordHash, loginInfo.password.toCharArray())) {
+                    if (userInfo.participants.count() > 0 && userInfo.employees.count() == 0L) {
+                        // ensure that the user is approved
+                        val participant = userInfo.participants.first()
+                        returnValue = participant.uuid.toString()
+                    }
+                }
+            }
+            call.respond(returnValue)
+        }
+
+        post("/sign-up-participant") {
+            val userParticipant = call.receive<UserParticipant>()
+            createParticipantFromUser(userParticipant)
+            call.respond(true)
+        }
+
     }
 }
 

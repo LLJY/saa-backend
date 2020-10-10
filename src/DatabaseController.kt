@@ -57,6 +57,58 @@ fun dbConnect() {
     }
 }
 
+suspend fun createParticipantFromUser(user: UserParticipant) {
+    withContext(Dispatchers.IO) {
+        val hash = argonHash(user.password)
+        val isSuccessful = newSuspendedTransaction {
+            try {
+                val person = PersonDao.new {
+                    firstName = user.firstName
+                    middleName = null
+                    lastName = user.lastName
+                    email = user.email
+                    dateOfBirth = user.dob
+                    passwordHash = hash
+                    passportNumber = user.passportNumber
+                    passportExpiry = user.passportExpiry
+                    country = user.country
+                    contactNumber = user.contactNumber.toString()
+                    notificationToken = "0"
+                }
+                ParticipantDao.new {
+                    userInfo = person
+                    organisation = user.organisation
+                    jobTitle = user.jobTitle
+                }
+                true
+            } catch (ex: Exception) {
+                println(ex.toString())
+                false
+            }
+        }
+        if (!isSuccessful) {
+            throw Exception()
+        }
+    }
+}
+
+fun convertParticipantFromParticipantDao(participantDao: ParticipantDao): UserParticipant {
+    return UserParticipant(
+        participantDao.uuid.toString(),
+        participantDao.userInfo.firstName,
+        participantDao.userInfo.lastName,
+        participantDao.userInfo.dateOfBirth,
+        participantDao.userInfo.email,
+        participantDao.userInfo.country,
+        participantDao.userInfo.passportNumber,
+        participantDao.userInfo.passportExpiry,
+        participantDao.organisation,
+        participantDao.jobTitle,
+        "",
+        participantDao.userInfo.contactNumber.toInt()
+    )
+}
+
 suspend fun createEmployeeFromUser(user: UserStaff) {
     withContext(Dispatchers.IO) {
         val hash = argonHash(user.password)
@@ -479,7 +531,7 @@ suspend fun getCourseApplicants(uuid: UUID): List<UserApplicationModel> {
                             fullName,
                             application.progressType,
                             application.uuid.toString(),
-                            userInfo.uuid.toString(),
+                            convertParticipantFromParticipantDao(application.participant),
                             0 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
                         )
                     )
@@ -507,7 +559,7 @@ suspend fun getFellowshipApplicants(uuid: UUID): List<UserApplicationModel> {
                             fullName,
                             application.progressType,
                             application.uuid.toString(),
-                            userInfo.uuid.toString(),
+                            convertParticipantFromParticipantDao(application.participant),
                             1 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
                         )
                     )
@@ -535,7 +587,7 @@ suspend fun getScholarshipApplicants(uuid: UUID): List<UserApplicationModel> {
                             fullName,
                             application.progressType,
                             application.uuid.toString(),
-                            userInfo.uuid.toString(),
+                            convertParticipantFromParticipantDao(application.participant),
                             2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
                         )
                     )
@@ -563,7 +615,7 @@ suspend fun getDiplomaApplications(uuid: UUID): List<UserApplicationModel> {
                             fullName,
                             application.progressType,
                             application.uuid.toString(),
-                            userInfo.uuid.toString(),
+                            convertParticipantFromParticipantDao(application.participant),
                             2 // 0 course, 1 fellowship, 2 scholarship, 3 diploma
                         )
                     )
@@ -670,14 +722,3 @@ suspend fun getParticipantDiplomaApplications(uuid: UUID): List<DiplomaApplicati
     }
     return returnList
 }
-
-
-
-
-
-
-
-
-
-
-
