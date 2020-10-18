@@ -62,7 +62,7 @@ fun dbConnect() {
             )
         } catch (ex: Exception) {
             // just print the exception when it happens.
-            println(ex.toString())
+            printError(ex.toString())
         }
     }
 }
@@ -97,7 +97,7 @@ suspend fun createParticipantFromUser(user: UserParticipant) {
                 }
                 true
             } catch (ex: Exception) {
-                println(ex.toString())
+                printError(ex.toString())
                 false
             }
         }
@@ -170,7 +170,7 @@ suspend fun updateEmployeeFromUser(user: UserStaff) {
                 person.contactNumber = user.contactNumber.toString()
                 person.notificationToken = "0"
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -196,7 +196,7 @@ suspend fun getEmployeeInfo(uuid: String): UserStaff {
                         employee.userInfo.contactNumber.toInt()
                 )
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -241,7 +241,7 @@ suspend fun createCourseFromCourseModel(courseModel: CourseModel) {
                     fees = courseModel.fees
                 }
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -266,7 +266,7 @@ suspend fun updateCourseFromCourseModel(courseModel: CourseModel) {
                 course.covered = courseModel.covered
                 course.fees = courseModel.fees
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -280,7 +280,7 @@ suspend fun deleteCourseFromCourseModel(courseModel: CourseModel) {
                 course.delete()
                 course.courseInfo.delete()
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -321,7 +321,7 @@ suspend fun createFellowshipFromFellowshipModel(fellowshipModel: FellowshipModel
                     fellowShipCourse = course
                 }
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -343,7 +343,7 @@ suspend fun updateFellowshipFromFellowshipModel(fellowshipModel: FellowshipModel
                 fellowship.fellowShipCourse =
                         CourseDao.find { Courses.uuid eq UUID.fromString(fellowshipModel.course.uuid) }.first()
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -361,7 +361,7 @@ suspend fun deleteFellowshipFromFellowshipModel(fellowshipModel: FellowshipModel
                         FellowShipDao.find { FellowShips.uuid eq UUID.fromString(fellowshipModel.uuid) }.first()
                 fellowship.delete()
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -403,7 +403,7 @@ suspend fun createDiplomaFromDiplomaModel(diplomaModel: DiplomaModel) {
                     outline = diplomaModel.outline
                 }
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -425,7 +425,7 @@ suspend fun updateDiplomaFromDiplomaModel(diplomaModel: DiplomaModel) {
                 diploma.outline = diplomaModel.outline
                 diploma.fees = diplomaModel.fees
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -442,7 +442,7 @@ suspend fun deleteDiplomaFromDiplomaModel(diplomaModel: DiplomaModel) {
                 val diploma = DiplomaDao.find { Diplomas.uuid eq UUID.fromString(diplomaModel.uuid) }.first()
                 diploma.delete()
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -479,7 +479,7 @@ suspend fun createScholarshipFromScholarshipModel(scholarshipModel: ScholarshipM
                     outline = scholarshipModel.outline
                 }
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -501,7 +501,7 @@ suspend fun updateScholarshipFromScholarshipModel(scholarshipModel: ScholarshipM
                 scholarship.bondYears = scholarshipModel.bondTime
                 scholarship.outline = scholarshipModel.outline
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -519,7 +519,7 @@ suspend fun deleteScholarshipFromScholarshipModel(scholarshipModel: ScholarshipM
                         ScholarshipDao.find { Scholarships.uuid eq UUID.fromString(scholarshipModel.uuid) }.first()
                 scholarship.delete()
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -546,7 +546,7 @@ suspend fun getCourseApplicants(uuid: UUID): List<UserApplicationModel> {
                     )
                 }
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -574,7 +574,7 @@ suspend fun getFellowshipApplicants(uuid: UUID): List<UserApplicationModel> {
                     )
                 }
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -602,7 +602,7 @@ suspend fun getScholarshipApplicants(uuid: UUID): List<UserApplicationModel> {
                     )
                 }
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -630,7 +630,7 @@ suspend fun getDiplomaApplications(uuid: UUID): List<UserApplicationModel> {
                     )
                 }
             } catch (ex: ExposedSQLException) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -653,7 +653,7 @@ suspend fun getParticipantCourseApplications(uuid: UUID): List<CourseApplication
                     )
                 }
             } catch (ex: Exception) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -677,7 +677,7 @@ suspend fun getParticipantFellowshipApplications(uuid: UUID): List<FellowshipApp
                     )
                 }
             } catch (ex: Exception) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -701,7 +701,7 @@ suspend fun getParticipantScholarshipApplications(uuid: UUID): List<ScholarshipA
                     )
                 }
             } catch (ex: Exception) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
@@ -725,7 +725,7 @@ suspend fun getParticipantDiplomaApplications(uuid: UUID): List<DiplomaApplicati
                     )
                 }
             } catch (ex: Exception) {
-                println(ex.toString())
+                printError(ex.toString())
             }
         }
     }
