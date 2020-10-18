@@ -1,5 +1,7 @@
 package com.saa.backend
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
 import de.mkammerer.argon2.Argon2
 import de.mkammerer.argon2.Argon2Factory
 import io.ktor.application.*
@@ -15,6 +17,7 @@ import io.ktor.server.netty.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -27,6 +30,12 @@ val server by lazy {
         module = Application::module
     )
 }
+
+fun setLoggingLevel(level: Level?) {
+    val root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) as Logger
+    root.level = level
+}
+
 suspend fun argonHash(password: String): String {
     var returnString: String
     withContext(Dispatchers.IO) {
@@ -36,6 +45,7 @@ suspend fun argonHash(password: String): String {
 }
 
 fun main(args: Array<String>) {
+    setLoggingLevel(Level.INFO)
     Runtime.getRuntime().addShutdownHook(Thread {
         stop()
     })
