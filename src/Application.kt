@@ -19,6 +19,14 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 val argon2: Argon2 = Argon2Factory.create()
+val server by lazy {
+    embeddedServer(
+        Netty,
+        port = 8080,
+        watchPaths = listOf(System.getProperty("user.dir")),
+        module = Application::module
+    )
+}
 suspend fun argonHash(password: String): String {
     var returnString: String
     withContext(Dispatchers.IO) {
@@ -28,13 +36,19 @@ suspend fun argonHash(password: String): String {
 }
 
 fun main(args: Array<String>) {
+    Runtime.getRuntime().addShutdownHook(Thread {
+        stop()
+    })
     dbConnect()
-    embeddedServer(
-            Netty,
-            port = 8080,
-            watchPaths = listOf(System.getProperty("user.dir")),
-            module = Application::module
-    ).start(wait = true)
+    printInfo("Starting Server...")
+    // start the server
+    server.start()
+}
+
+fun stop() {
+    printInfo("Stopping Server... ( Wait 5 seconds! )")
+    server.stop(5000, 10000)
+    dbShutDown()
 }
 
 @Suppress("unused") // Referenced in application.conf
@@ -71,16 +85,16 @@ fun Application.module() {
             // as a fallback, return nothing.
             var returnValue = ""
             val loginInfo = call.receive<LoginUserRoute>()
-            println(loginInfo.toString())
+            printDebug(loginInfo.toString())
             newSuspendedTransaction(Dispatchers.IO) {
                 val userInfo = PersonDao.find { Persons.email eq loginInfo.email }.first()
-                println(userInfo.email)
+                printDebug(userInfo.email)
                 if (argon2.verify(userInfo.passwordHash, loginInfo.password.toCharArray())) {
                     // ensure that user is an employee by counting the references
-                    println("correct password")
+                    printDebug("correct password")
                     if (userInfo.employees.count() > 0 && userInfo.participants.count() == 0L) {
                         // ensure that the user is approved
-                        println("user is employee")
+                        printDebug("user is employee")
                         val employee = userInfo.employees.first()
                         if (employee.approvalStatus == 2) {
                             // return the uuid
@@ -90,6 +104,25 @@ fun Application.module() {
                 }
             }
             call.respond(returnValue)
+        }
+        data class ChangePasswordBody(var uuid: String, var password: String)
+        post("/change-user-password") {
+            // recieve the call and let kotlinx serialization deal with it.
+            val body = call.receive<ChangePasswordBody>()
+            newSuspendedTransaction(Dispatchers.IO) {
+                val participant = ParticipantDao.find { Participants.uuid eq UUID.fromString(body.uuid) }.first()
+                // hash the new password and update the database with it
+                participant.userInfo.passwordHash = argonHash(body.password)
+            }
+        }
+        post("/change-employee-password") {
+            // recieve the call and let kotlinx serialization deal with it.
+            val body = call.receive<ChangePasswordBody>()
+            newSuspendedTransaction(Dispatchers.IO) {
+                val employee = EmployeeDao.find { Employees.uuid eq UUID.fromString(body.uuid) }.first()
+                // hash the new password and update the database with it
+                employee.userInfo.passwordHash = argonHash(body.password)
+            }
         }
         post("/get-employee-info") {
             // respond with get employee info
@@ -127,7 +160,7 @@ fun Application.module() {
                         }
                         true
                     } catch (ex: Exception) {
-                        println(ex.toString())
+                        printError(ex.toString())
                         false
                     }
                 }
@@ -161,7 +194,7 @@ fun Application.module() {
                         }
                         true
                     } catch (ex: Exception) {
-                        println(ex.toString())
+                        printError(ex.toString())
                         false
                     }
                 }
@@ -195,7 +228,7 @@ fun Application.module() {
                         }
                         true
                     } catch (ex: Exception) {
-                        println(ex.toString())
+                        printError(ex.toString())
                         false
                     }
                 }
@@ -230,7 +263,7 @@ fun Application.module() {
                         }
                         true
                     } catch (ex: Exception) {
-                        println(ex.toString())
+                        printError(ex.toString())
                         false
                     }
                 }
@@ -259,7 +292,6 @@ fun Application.module() {
                                 userInfo.contactNumber,
                                 userInfo.country,
                                 userInfo.passportNumber,
-                                userInfo.passportExpiry,
                                 userInfo.email,
                                 when (staff.userType) {
                                     0 -> "School Head"
@@ -462,10 +494,10 @@ fun Application.module() {
             // as a fallback, return nothing.
             var returnValue = ""
             val loginInfo = call.receive<LoginUserRoute>()
-            println(loginInfo.toString())
+            printDebug(loginInfo.toString())
             newSuspendedTransaction(Dispatchers.IO) {
                 val userInfo = PersonDao.find { Persons.email eq loginInfo.email }.first()
-                println(userInfo.email)
+                printDebug(userInfo.email)
                 if (argon2.verify(userInfo.passwordHash, loginInfo.password.toCharArray())) {
                     if (userInfo.participants.count() > 0 && userInfo.employees.count() == 0L) {
                         // ensure that the user is approved
@@ -481,6 +513,13 @@ fun Application.module() {
             val userParticipant = call.receive<UserParticipant>()
             createParticipantFromUser(userParticipant)
             call.respond(true)
+        }
+
+        post("/get-interests") {
+            val returnList = ArrayList<InterestModel>()
+            newSuspendedTransaction {
+
+            }
         }
 
     }

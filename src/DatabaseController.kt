@@ -11,50 +11,65 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 import kotlin.collections.ArrayList
-
-fun dbConnect() {
-    val sqlSecret = """.5k]A9z4[k?VJszna%{]Zc89=LYVPKD"""
-    val config = HikariConfig().apply {
+val dataSource by lazy {
+    HikariDataSource(HikariConfig().apply {
         jdbcUrl = "jdbc:mysql://localhost/saa_db"
         driverClassName = "com.mysql.cj.jdbc.Driver"
         username = "hubble_user"
-        password = sqlSecret
-        maximumPoolSize = 10
-    }
-    val dataSource = HikariDataSource(config)
+        password = """.5k]A9z4[k?VJszna%{]Zc89=LYVPKD"""
+        maximumPoolSize = 20
+        minimumIdle = 5
+    })
+}
+fun dbConnect() {
     Database.connect(dataSource)
     // create the schema
-    println("Creating db schema (will automatically skip if already created)")
+    printInfo("Creating db schema (will automatically skip if already created)")
     transaction {
-        SchemaUtils.create(
-            Persons,
-            Participants,
-            Employees,
-            CourseInfos,
-            Courses,
-            FellowShips,
-            Diplomas,
-            Scholarships,
-            FellowShipApplications,
-            CourseApplications,
-            ScholarShipApplications,
-            DiplomaApplications
-        )
-//        SchemaUtils.createMissingTablesAndColumns(
-//            Persons,
-//            Participants,
-//            Employees,
-//            CourseInfos,
-//            Courses,
-//            FellowShips,
-//            Diplomas,
-//            Scholarships,
-//            FellowShipApplications,
-//            CourseApplications,
-//            ScholarShipApplications,
-//            DiplomaApplications
-//        )
+        try {
+            SchemaUtils.create(
+                Persons,
+                Participants,
+                Employees,
+                CourseInfos,
+                Courses,
+                FellowShips,
+                Diplomas,
+                Scholarships,
+                FellowShipApplications,
+                CourseApplications,
+                ScholarShipApplications,
+                DiplomaApplications,
+                CourseInterests,
+                FellowShipInterests,
+                ScholarShipInterests,
+                DiplomaInterests
+
+            )
+            SchemaUtils.createMissingTablesAndColumns(
+                Persons,
+                Participants,
+                Employees,
+                CourseInfos,
+                Courses,
+                FellowShips,
+                Diplomas,
+                Scholarships,
+                FellowShipApplications,
+                CourseApplications,
+                ScholarShipApplications,
+                DiplomaApplications
+            )
+        } catch (ex: Exception) {
+            // just print the exception when it happens.
+            println(ex.toString())
+        }
     }
+}
+
+fun dbShutDown() {
+    printInfo("Shutting down HikariPool Connections")
+    dataSource.close()
 }
 
 suspend fun createParticipantFromUser(user: UserParticipant) {
@@ -101,7 +116,7 @@ fun convertParticipantFromParticipantDao(participantDao: ParticipantDao): UserPa
         participantDao.userInfo.email,
         participantDao.userInfo.country,
         participantDao.userInfo.passportNumber,
-        participantDao.userInfo.passportExpiry,
+        participantDao.userInfo.passportExpiry!!,
         participantDao.organisation,
         participantDao.jobTitle,
         "",
@@ -121,7 +136,6 @@ suspend fun createEmployeeFromUser(user: UserStaff) {
                 dateOfBirth = user.dateOfBirth
                 passwordHash = hash
                 passportNumber = user.passportNumber
-                passportExpiry = user.passportExpiry
                 country = user.country
                 contactNumber = user.contactNumber.toString()
                 notificationToken = "0"
@@ -152,7 +166,6 @@ suspend fun updateEmployeeFromUser(user: UserStaff) {
                     person.passwordHash = hash
                 }
                 person.passportNumber = user.passportNumber
-                person.passportExpiry = user.passportExpiry
                 person.country = user.country
                 person.contactNumber = user.contactNumber.toString()
                 person.notificationToken = "0"
@@ -177,7 +190,6 @@ suspend fun getEmployeeInfo(uuid: String): UserStaff {
                         employee.userType,
                         employee.userInfo.email,
                         employee.userInfo.passportNumber,
-                        employee.userInfo.passportExpiry,
                         employee.userInfo.dateOfBirth,
                         employee.userInfo.country,
                         "",
@@ -202,7 +214,6 @@ fun convertCourseDaoToCourseModel(courseDao: CourseDao): CourseModel {
             courseDao.learningOutcomes,
             courseDao.prerequisites,
             courseDao.learningActivities,
-            courseDao.language,
             courseDao.covered,
             courseDao.whoShouldAttend,
             courseDao.courseInfo.applicationDeadline
@@ -226,7 +237,6 @@ suspend fun createCourseFromCourseModel(courseModel: CourseModel) {
                     whoShouldAttend = courseModel.attending
                     prerequisites = courseModel.prerequisites
                     learningActivities = courseModel.learningActivities
-                    language = courseModel.language
                     covered = courseModel.covered
                     fees = courseModel.fees
                 }
@@ -253,7 +263,6 @@ suspend fun updateCourseFromCourseModel(courseModel: CourseModel) {
                 course.whoShouldAttend = courseModel.attending
                 course.prerequisites = courseModel.prerequisites
                 course.learningActivities = courseModel.learningActivities
-                course.language = courseModel.language
                 course.covered = courseModel.covered
                 course.fees = courseModel.fees
             } catch (ex: ExposedSQLException) {

@@ -30,7 +30,6 @@ data class UserStaff(
         var userLevel: Int = 0,
         var email: String = "",
         var passportNumber: String = "",
-        var passportExpiry: Long = 0,
         var dateOfBirth: Long = 0,
         var country: String = "",
         var password: String = "",
@@ -46,7 +45,6 @@ data class CourseModel(
         var learningOutcomes: String,
         var prerequisites: String,
         var learningActivities: String,
-        var language: String,
         var covered: String,
         var attending: String,
         var applicationDeadline: Long
@@ -119,7 +117,17 @@ data class UserApplicationModel(
 data class ParticipantModel(var uuid: String, var fullName: String, var dob: Long, var contactNumber: String, var country: String, var passportNumber: String, var passportExpiry: Long, var organisation: String, var jobTitle: String, var email: String)
 
 @Serializable
-data class EmployeeModel(var uuid: String, var fullName: String, var dob: Long, var contactNumber: String, var country: String, var passportNumber: String, var passportExpiry: Long, var email: String, var userType: String, var approvalStatus: Int)
+data class EmployeeModel(
+        var uuid: String,
+        var fullName: String,
+        var dob: Long,
+        var contactNumber: String,
+        var country: String,
+        var passportNumber: String,
+        var email: String,
+        var userType: String,
+        var approvalStatus: Int
+)
 
 @Serializable
 data class LoginUserRoute(var email: String, var password: String)
@@ -146,4 +154,13 @@ data class DiplomaApplicationModel(
 data class ScholarshipApplicationModel(
         var scholarship: ScholarshipModel,
         var progressType: Int
+)
+
+@Serializable
+data class InterestModel(
+        val uuid: String,
+        var course: CourseModel?,
+        var fellowship: FellowshipModel?,
+        var diploma: DiplomaModel?,
+        var scholarship: ScholarshipModel?
 )
