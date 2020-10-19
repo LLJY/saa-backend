@@ -158,9 +158,10 @@ data class ScholarshipApplicationModel(
 
 @Serializable
 data class InterestModel(
+        val userUUID: String,
         val uuid: String,
-        var course: CourseModel?,
-        var fellowship: FellowshipModel?,
-        var diploma: DiplomaModel?,
-        var scholarship: ScholarshipModel?
+        var course: CourseModel? = null,
+        var fellowship: FellowshipModel? = null,
+        var diploma: DiplomaModel? = null,
+        var scholarship: ScholarshipModel? = null
 )
