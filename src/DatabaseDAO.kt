@@ -16,7 +16,7 @@ object Persons: IntIdTable(){
     val firstName = varchar("first_name", 255)
     val middleName = varchar("middle_name", 255).nullable()
     val lastName = varchar("last_name", 255)
-    val email = varchar("email", 255)
+    val email = varchar("email", 255).uniqueIndex()
     val dateOfBirth = long("dob_timestamp")
     val passwordHash = varchar("password_hash", 255)
     val passportNumber = varchar("passport_number", 255)
