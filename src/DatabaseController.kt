@@ -10,7 +10,6 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
-import kotlin.collections.ArrayList
 val dataSource by lazy {
     HikariDataSource(HikariConfig().apply {
         jdbcUrl = "jdbc:mysql://localhost/saa_db"
@@ -530,7 +529,7 @@ suspend fun deleteScholarshipFromScholarshipModel(scholarshipModel: ScholarshipM
  * @param uuid unique uuid of the course
  */
 suspend fun getCourseApplicants(uuid: UUID): List<UserApplicationModel> {
-    val returnList = ArrayList<UserApplicationModel>()
+    val returnList = mutableListOf<UserApplicationModel>()
     withContext(Dispatchers.IO) {
         newSuspendedTransaction {
             try {
@@ -562,7 +561,7 @@ suspend fun getCourseApplicants(uuid: UUID): List<UserApplicationModel> {
  * @param uuid unique uuid of the fellowship
  */
 suspend fun getFellowshipApplicants(uuid: UUID): List<UserApplicationModel> {
-    val returnList = ArrayList<UserApplicationModel>()
+    val returnList = mutableListOf<UserApplicationModel>()
     withContext(Dispatchers.IO) {
         newSuspendedTransaction {
             try {
@@ -594,7 +593,7 @@ suspend fun getFellowshipApplicants(uuid: UUID): List<UserApplicationModel> {
  * @param uuid unique uuid of the scholarship
  */
 suspend fun getScholarshipApplicants(uuid: UUID): List<UserApplicationModel> {
-    val returnList = ArrayList<UserApplicationModel>()
+    val returnList = mutableListOf<UserApplicationModel>()
     withContext(Dispatchers.IO) {
         newSuspendedTransaction {
             try {
@@ -626,7 +625,7 @@ suspend fun getScholarshipApplicants(uuid: UUID): List<UserApplicationModel> {
  * @param uuid unique uuid of the diploma
  */
 suspend fun getDiplomaApplications(uuid: UUID): List<UserApplicationModel> {
-    val returnList = ArrayList<UserApplicationModel>()
+    val returnList = mutableListOf<UserApplicationModel>()
     withContext(Dispatchers.IO) {
         newSuspendedTransaction {
             try {
@@ -654,7 +653,7 @@ suspend fun getDiplomaApplications(uuid: UUID): List<UserApplicationModel> {
 }
 
 suspend fun getParticipantCourseApplications(uuid: UUID): List<CourseApplicationModel> {
-    val returnList = ArrayList<CourseApplicationModel>()
+    val returnList = mutableListOf<CourseApplicationModel>()
     withContext(Dispatchers.IO) {
         newSuspendedTransaction {
             try {
@@ -677,7 +676,7 @@ suspend fun getParticipantCourseApplications(uuid: UUID): List<CourseApplication
 }
 
 suspend fun getParticipantFellowshipApplications(uuid: UUID): List<FellowshipApplicationModel> {
-    val returnList = ArrayList<FellowshipApplicationModel>()
+    val returnList = mutableListOf<FellowshipApplicationModel>()
     withContext(Dispatchers.IO) {
         newSuspendedTransaction(Dispatchers.IO) {
             try {
@@ -701,7 +700,7 @@ suspend fun getParticipantFellowshipApplications(uuid: UUID): List<FellowshipApp
 }
 
 suspend fun getParticipantScholarshipApplications(uuid: UUID): List<ScholarshipApplicationModel> {
-    val returnList = ArrayList<ScholarshipApplicationModel>()
+    val returnList = mutableListOf<ScholarshipApplicationModel>()
     withContext(Dispatchers.IO) {
         newSuspendedTransaction(Dispatchers.IO) {
             try {
@@ -725,7 +724,7 @@ suspend fun getParticipantScholarshipApplications(uuid: UUID): List<ScholarshipA
 }
 
 suspend fun getParticipantDiplomaApplications(uuid: UUID): List<DiplomaApplicationModel> {
-    val returnList = ArrayList<DiplomaApplicationModel>()
+    val returnList = mutableListOf<DiplomaApplicationModel>()
     withContext(Dispatchers.IO) {
         newSuspendedTransaction(Dispatchers.IO) {
             try {

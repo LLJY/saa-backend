@@ -19,7 +19,6 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.slf4j.LoggerFactory
 import java.util.*
-import kotlin.collections.ArrayList
 
 val argon2: Argon2 = Argon2Factory.create()
 val server by lazy {
@@ -160,7 +159,7 @@ fun Application.module() {
             call.respond(true)
         }
         get("/get-courses"){
-            val courseList = ArrayList<CourseModel>()
+            val courseList = mutableListOf<CourseModel>()
             withContext(Dispatchers.IO) {
                 val isSuccessful = newSuspendedTransaction {
                     try {
@@ -179,7 +178,7 @@ fun Application.module() {
                 }
             }
             // assert the type for serialization
-            call.respond(ArrayList<CourseModel>(courseList))
+            call.respond(courseList)
         }
         post("/add-fellowship") {
             createFellowshipFromFellowshipModel(call.receive())
@@ -194,7 +193,7 @@ fun Application.module() {
             call.respond(true)
         }
         get("/get-fellowships") {
-            val fellowshipList = ArrayList<FellowshipModel>()
+            val fellowshipList = mutableListOf<FellowshipModel>()
             withContext(Dispatchers.IO) {
                 val isSuccessful = newSuspendedTransaction {
                     try {
@@ -213,7 +212,7 @@ fun Application.module() {
                 }
             }
             // assert the type for serialization
-            call.respond(ArrayList<FellowshipModel>(fellowshipList))
+            call.respond(fellowshipList)
         }
         post("/add-diploma") {
             createDiplomaFromDiplomaModel(call.receive())
@@ -228,7 +227,7 @@ fun Application.module() {
             call.respond(true)
         }
         get("/get-diplomas") {
-            val diplomaList = ArrayList<DiplomaModel>()
+            val diplomaList = mutableListOf<DiplomaModel>()
             withContext(Dispatchers.IO) {
                 val isSuccessful = newSuspendedTransaction {
                     try {
@@ -247,7 +246,7 @@ fun Application.module() {
                 }
             }
             // assert the type for serialization
-            call.respond(ArrayList<DiplomaModel>(diplomaList))
+            call.respond(diplomaList)
         }
         post("/add-scholarship") {
             createScholarshipFromScholarshipModel(call.receive())
@@ -262,7 +261,7 @@ fun Application.module() {
             call.respond(true)
         }
         get("/get-scholarships") {
-            val scholarshipList = ArrayList<ScholarshipModel>()
+            val scholarshipList = mutableListOf<ScholarshipModel>()
             withContext(Dispatchers.IO) {
                 val isSuccessful = newSuspendedTransaction {
                     try {
@@ -286,7 +285,7 @@ fun Application.module() {
         }
         get("/get-unapproved-staff") {
             withContext(Dispatchers.IO) {
-                val returnStaffs = ArrayList<EmployeeModel>()
+                val returnStaffs = mutableListOf<EmployeeModel>()
                 val isSuccessful = newSuspendedTransaction {
                     try {
                         // get the staff that are
@@ -602,7 +601,7 @@ fun Application.module() {
         post("/get-interests") {
             // recieve the user id as interests is per user.
             var userId = call.receive<String>().removeSurrounding("\"", "\"")
-            val returnList = ArrayList<InterestModel>()
+            val returnList = mutableListOf<InterestModel>()
             newSuspendedTransaction(Dispatchers.IO) {
                 try {
                     val participant = ParticipantDao.find { Participants.uuid eq UUID.fromString(userId) }.first()
