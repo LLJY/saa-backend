@@ -516,6 +516,10 @@ suspend fun deleteScholarshipFromScholarshipModel(scholarshipModel: ScholarshipM
     }
 }
 
+/**
+ * get all the applicants for a course by its UUID
+ * @param uuid unique uuid of the course
+ */
 suspend fun getCourseApplicants(uuid: UUID): List<UserApplicationModel> {
     val returnList = ArrayList<UserApplicationModel>()
     withContext(Dispatchers.IO) {
@@ -544,6 +548,10 @@ suspend fun getCourseApplicants(uuid: UUID): List<UserApplicationModel> {
     return returnList
 }
 
+/**
+ * get all the applicants for a fellowship by its UUID
+ * @param uuid unique uuid of the fellowship
+ */
 suspend fun getFellowshipApplicants(uuid: UUID): List<UserApplicationModel> {
     val returnList = ArrayList<UserApplicationModel>()
     withContext(Dispatchers.IO) {
@@ -572,6 +580,10 @@ suspend fun getFellowshipApplicants(uuid: UUID): List<UserApplicationModel> {
     return returnList
 }
 
+/**
+ * get all the applicants for a scholarship by its UUID
+ * @param uuid unique uuid of the scholarship
+ */
 suspend fun getScholarshipApplicants(uuid: UUID): List<UserApplicationModel> {
     val returnList = ArrayList<UserApplicationModel>()
     withContext(Dispatchers.IO) {
@@ -600,6 +612,10 @@ suspend fun getScholarshipApplicants(uuid: UUID): List<UserApplicationModel> {
     return returnList
 }
 
+/**
+ * get all the applicants for a diploma by its UUID
+ * @param uuid unique uuid of the diploma
+ */
 suspend fun getDiplomaApplications(uuid: UUID): List<UserApplicationModel> {
     val returnList = ArrayList<UserApplicationModel>()
     withContext(Dispatchers.IO) {
